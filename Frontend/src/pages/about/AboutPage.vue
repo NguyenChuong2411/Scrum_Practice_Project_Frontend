@@ -67,3 +67,5 @@ onMounted(() => {
   console.log('Home page loaded')
 })
 </script>
+
+<style src="./AboutPage.css" scoped></style>
