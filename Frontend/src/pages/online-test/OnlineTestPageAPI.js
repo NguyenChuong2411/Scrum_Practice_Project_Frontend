@@ -31,3 +31,14 @@ export const fetchTestDetails = async (testId) => {
     throw error;
   }
 };
+
+// Hàm để lấy chi tiết bài thi Listening theo ID
+export const fetchListeningTestDetails = async (testId) => {
+  try {
+    const response = await apiClient.get(`/OnlineTest/GetListeningTestDetails/${testId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching listening test details for test ${testId}:`, error);
+    throw error;
+  }
+};

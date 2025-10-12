@@ -11,12 +11,62 @@
           Thoát
         </button>
       </div>
+      
+      <!-- Audio Player for Listening Tests -->
+      <div v-if="isListeningTest && audioUrl" class="audio-player-container">
+        <div class="audio-player">
+          <audio 
+            ref="audioElement"
+            :src="audioUrl"
+            @timeupdate="onAudioTimeUpdate"
+            @loadedmetadata="onAudioLoadedMetadata"
+            @ended="onAudioEnded"
+            preload="metadata"
+          ></audio>
+          
+          <div class="audio-controls">
+            <button class="audio-btn" @click="toggleAudio">
+              <i v-if="isPlaying" class="fa-regular fa-circle-pause"></i>
+              <i v-else class="fa-solid fa-headphones"></i>
+            </button>
+            
+            <div class="audio-progress">
+              <div class="audio-time-display">
+                <span class="current-time">{{ formatAudioTime(currentAudioTime) }}</span>
+                <span class="total-time">{{ formatAudioTime(audioDuration) }}</span>
+              </div>
+              <div class="audio-slider-container">
+                <input 
+                  type="range" 
+                  class="audio-slider"
+                  :min="0"
+                  :max="audioDuration"
+                  :value="currentAudioTime"
+                  @input="seekAudio($event.target.value)"
+                />
+              </div>
+            </div>
+            
+            <div class="recording-tabs">
+              <button 
+                v-for="(part, index) in passages" 
+                :key="part.id"
+                class="recording-tab"
+                :class="{ active: activePassageId === part.id }"
+                @click="selectPassage(part.id)"
+              >
+                Recording {{ index + 1 }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Test Content -->
-    <div class="test-content">
-      <!-- Left Panel - Passages -->
-      <div class="passages-panel">
+    <div class="test-content" :class="{ 'listening-layout': isListeningTest }">
+      <!-- Left Panel - Passages/Parts -->
+      <div v-if="!isListeningTest" class="passages-panel">
         <div class="passage-tabs" v-if="!isLoading && passages.length > 0">
           <button 
             v-for="passage in passages" 
@@ -142,9 +192,6 @@
           <div class="timer-label">{{ testMode === 'practice' && timeRemaining === 0 ? 'Không giới hạn thời gian' : 'Thời gian còn lại' }}</div>
           <div class="timer-display" v-if="timeRemaining > 0">{{ formatTime(timeRemaining) }}</div>
           <div class="timer-display" v-else>∞</div>
-          <button class="hide-timer-btn" @click="toggleTimer" v-if="timeRemaining > 0">
-            {{ showTimer ? 'Ẩn bài' : 'Hiện bài' }}
-          </button>
         </div>
 
         <!-- Question Navigation Grid -->
@@ -207,7 +254,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { fetchTestDetails } from '../OnlineTestPageAPI.js'
+import { fetchTestDetails, fetchListeningTestDetails } from '../OnlineTestPageAPI.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -230,8 +277,33 @@ const timeRemaining = ref(3600)
 const showExitConfirm = ref(false)
 const showSubmitConfirm = ref(false)
 
-// Filter passages based mode and selected sections
+// Listening test specific states
+const isListeningTest = computed(() => {
+  return testData.value?.audioUrl ? true : false
+})
+const audioUrl = ref('')
+const currentAudioTime = ref(0)
+const audioDuration = ref(0)
+const isPlaying = ref(false)
+const activePartId = ref(null)
+
+// Filter passages/parts based mode and selected sections
 const passages = computed(() => {
+  // For listening tests, use parts instead of passages
+  if (isListeningTest.value) {
+    if (!testData.value?.parts) return []
+    
+    if (testMode === 'practice' && selectedSectionIds.length > 0) {
+      const filteredParts = testData.value.parts.filter(p => {
+        return selectedSectionIds.includes(String(p.id)) || selectedSectionIds.includes(p.id)
+      })
+      return filteredParts
+    }
+    
+    return testData.value.parts || []
+  }
+  
+  // For reading tests, use passages
   if (!testData.value?.passages) return []
   
   if (testMode === 'practice' && selectedSectionIds.length > 0) {
@@ -254,6 +326,13 @@ const activePassage = computed(() => {
 
 const currentPassageQuestions = computed(() => {
   if (!activePassage.value) return []
+  
+  // For listening tests, flatten questions from all question groups
+  if (isListeningTest.value && activePassage.value.questionGroups) {
+    return activePassage.value.questionGroups.flatMap(group => group.questions || [])
+  }
+  
+  // For reading tests, return questions directly
   return activePassage.value.questions || []
 })
 
@@ -272,48 +351,89 @@ const currentPassageQuestionRange = computed(() => {
 
 const allQuestions = computed(() => {
   if (!passages.value) return []
+  
+  if (isListeningTest.value) {
+    // For listening tests, flatten questions from all parts and question groups
+    return passages.value.flatMap(part => 
+      part.questionGroups ? part.questionGroups.flatMap(group => group.questions || []) : []
+    )
+  }
+  
+  // For reading tests
   return passages.value.flatMap(p => p.questions || [])
 })
 
 // HÀM HELPER MỚI: TẠO RA DANH SÁCH CÂU HỎI "PHẲNG" VÀ ĐÁNH SỐ LẠI
 const flattenedQuestions = computed(() => {
-  if (!testData.value?.passages) return [];
-
   const result = [];
   let currentQuestionNumber = 1;
 
-  // Lặp qua tất cả các passage
-  for (const passage of testData.value.passages) {
-    if (!passage.questions) continue;
+  if (isListeningTest.value) {
+    // For listening tests
+    if (!testData.value?.parts) return [];
     
-    // Lặp qua các câu hỏi gốc từ API trong mỗi passage
-    for (const originalQuestion of passage.questions) {
-      if (originalQuestion.questionType === 'table') {
-        // Nếu là câu hỏi bảng, bung nó ra thành các câu hỏi con
-        const answerFields = getAnswerFields(originalQuestion); // Dùng lại hàm helper đã tạo
-        for (const field of answerFields) {
+    for (const part of testData.value.parts) {
+      if (!part.questionGroups) continue;
+      
+      for (const group of part.questionGroups) {
+        if (!group.questions) continue;
+        
+        for (const originalQuestion of group.questions) {
+          if (originalQuestion.questionType === 'table') {
+            const answerFields = getAnswerFields(originalQuestion);
+            for (const field of answerFields) {
+              result.push({
+                id: `virtual_${originalQuestion.id}_${field.answerId}`,
+                displayNumber: currentQuestionNumber,
+                passageId: part.id,
+                originalQuestionId: originalQuestion.id 
+              });
+              currentQuestionNumber++;
+            }
+          } else {
+            result.push({
+              id: originalQuestion.id,
+              displayNumber: currentQuestionNumber,
+              passageId: part.id,
+              originalQuestionId: originalQuestion.id
+            });
+            currentQuestionNumber++;
+          }
+        }
+      }
+    }
+  } else {
+    // For reading tests
+    if (!testData.value?.passages) return [];
+
+    for (const passage of testData.value.passages) {
+      if (!passage.questions) continue;
+      
+      for (const originalQuestion of passage.questions) {
+        if (originalQuestion.questionType === 'table') {
+          const answerFields = getAnswerFields(originalQuestion);
+          for (const field of answerFields) {
+            result.push({
+              id: `virtual_${originalQuestion.id}_${field.answerId}`,
+              displayNumber: currentQuestionNumber,
+              passageId: passage.id,
+              originalQuestionId: originalQuestion.id 
+            });
+            currentQuestionNumber++;
+          }
+        } else {
           result.push({
-            // Tạo một object câu hỏi "ảo"
-            id: `virtual_${originalQuestion.id}_${field.answerId}`,
-            displayNumber: currentQuestionNumber, // Số thứ tự mới
+            id: originalQuestion.id,
+            displayNumber: currentQuestionNumber,
             passageId: passage.id,
-            // Thêm tham chiếu đến câu hỏi gốc để scroll
-            originalQuestionId: originalQuestion.id 
+            originalQuestionId: originalQuestion.id
           });
           currentQuestionNumber++;
         }
-      } else {
-        // Nếu là câu hỏi thường, chỉ cần đánh lại số thứ tự
-        result.push({
-          id: originalQuestion.id,
-          displayNumber: currentQuestionNumber, // Số thứ tự mới
-          passageId: passage.id,
-          originalQuestionId: originalQuestion.id
-        });
-        currentQuestionNumber++;
       }
     }
   }
+  
   return result;
 });
 
@@ -520,8 +640,58 @@ const formatTime = (seconds) => {
   return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
-const toggleTimer = () => {
-  showTimer.value = !showTimer.value
+// Audio player methods
+const audioElement = ref(null)
+
+const playAudio = () => {
+  if (audioElement.value) {
+    audioElement.value.play()
+    isPlaying.value = true
+  }
+}
+
+const pauseAudio = () => {
+  if (audioElement.value) {
+    audioElement.value.pause()
+    isPlaying.value = false
+  }
+}
+
+const toggleAudio = () => {
+  if (isPlaying.value) {
+    pauseAudio()
+  } else {
+    playAudio()
+  }
+}
+
+const seekAudio = (time) => {
+  if (audioElement.value) {
+    audioElement.value.currentTime = time
+    currentAudioTime.value = time
+  }
+}
+
+const formatAudioTime = (seconds) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+const onAudioTimeUpdate = () => {
+  if (audioElement.value) {
+    currentAudioTime.value = audioElement.value.currentTime
+  }
+}
+
+const onAudioLoadedMetadata = () => {
+  if (audioElement.value) {
+    audioDuration.value = audioElement.value.duration
+  }
+}
+
+const onAudioEnded = () => {
+  isPlaying.value = false
 }
 
 const exitTest = () => {
@@ -555,7 +725,16 @@ const startTimer = () => {
 // Lifecycle
 onMounted(async () => {
   try {
-    const data = await fetchTestDetails(testId);
+    // Try to fetch as listening test first, then fallback to reading test
+    let data;
+    try {
+      data = await fetchListeningTestDetails(testId);
+      audioUrl.value = data.audioUrl;
+    } catch (listeningError) {
+      // If listening fetch fails, try reading test
+      data = await fetchTestDetails(testId);
+    }
+    
     testData.value = data;
     testTitle.value = data.title; // Cập nhật title từ API
     

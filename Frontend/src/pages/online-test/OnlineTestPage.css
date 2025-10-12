@@ -75,7 +75,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  /* background: linear-gradient(90deg, #3b82f6, #8b5cf6); */
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -138,14 +138,7 @@
   color: #cbd5e1;
 }
 
-/* Loading animation */
-.box-list-loading {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin: 2rem auto;
-  max-width: 400px;
-}
+
 
 /* Responsive design */
 @media (max-width: 768px) {
