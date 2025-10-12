@@ -3,7 +3,7 @@
     <!-- Header Section -->
     <section class="page-header">
       <div class="container">
-        <h1 class="page-title">Liên hệ</h1>
+        <h1 class="page-title">Xin chào bạn</h1>
         <p class="page-subtitle">Hãy kết nối với chúng tôi để bắt đầu hành trình học tiếng Anh</p>
       </div>
     </section>
@@ -14,26 +14,23 @@
         <div class="contact-layout">
           <!-- Contact Form -->
           <div class="contact-form-section">
-            <h2>Gửi tin nhắn cho chúng tôi</h2>
             <form @submit.prevent="submitForm" class="contact-form">
               <div class="form-row">
                 <div class="form-group">
-                  <label for="firstName">Họ *</label>
+                  <label for="firstName">Họ</label>
                   <input 
                     type="text" 
                     id="firstName" 
                     v-model="form.firstName" 
-                    required 
                     class="form-input"
                   />
                 </div>
                 <div class="form-group">
-                  <label for="lastName">Tên *</label>
+                  <label for="lastName">Tên</label>
                   <input 
                     type="text" 
                     id="lastName" 
                     v-model="form.lastName" 
-                    required 
                     class="form-input"
                   />
                 </div>
@@ -41,12 +38,11 @@
 
               <div class="form-row">
                 <div class="form-group">
-                  <label for="email">Email *</label>
+                  <label for="email">Email</label>
                   <input 
                     type="email" 
                     id="email" 
                     v-model="form.email" 
-                    required 
                     class="form-input"
                   />
                 </div>
@@ -60,29 +56,17 @@
                   />
                 </div>
               </div>
-
-              <div class="form-group">
-                <label for="subject">Chủ đề *</label>
-                <select id="subject" v-model="form.subject" required class="form-select">
-                  <option value="">Chọn chủ đề</option>
-                  <option value="course-info">Thông tin khóa học</option>
-                  <option value="enrollment">Đăng ký học</option>
-                  <option value="support">Hỗ trợ kỹ thuật</option>
-                  <option value="partnership">Hợp tác</option>
-                  <option value="other">Khác</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="message">Tin nhắn *</label>
-                <textarea 
-                  id="message" 
-                  v-model="form.message" 
-                  required 
-                  rows="5" 
-                  class="form-textarea"
-                  placeholder="Nhập nội dung tin nhắn của bạn..."
-                ></textarea>
+              <div class="form-row full-width">
+                <div class="form-group">
+                  <label for="message">Tin nhắn</label>
+                  <textarea
+                    id="message" 
+                    v-model="form.message" 
+                    rows="5" 
+                    class="form-textarea"
+                    placeholder="Nhập nội dung tin nhắn của bạn..."
+                  ></textarea>
+                </div>
               </div>
 
               <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
@@ -93,71 +77,6 @@
 
             <div v-if="submitMessage" class="submit-message" :class="submitSuccess ? 'success' : 'error'">
               {{ submitMessage }}
-            </div>
-          </div>
-
-          <!-- Contact Info -->
-          <div class="contact-info-section">
-            <h2>Thông tin liên hệ</h2>
-            
-            <div class="contact-methods">
-              <div class="contact-method">
-                <div class="method-icon">📧</div>
-                <div class="method-content">
-                  <h4>Email</h4>
-                  <p>info@enly.vn</p>
-                  <p>support@enly.vn</p>
-                </div>
-              </div>
-
-              <div class="contact-method">
-                <div class="method-icon">📞</div>
-                <div class="method-content">
-                  <h4>Điện thoại</h4>
-                  <p>Hotline: (028) 1234 5678</p>
-                  <p>Zalo: 0909 123 456</p>
-                </div>
-              </div>
-
-              <div class="contact-method">
-                <div class="method-icon">📍</div>
-                <div class="method-content">
-                  <h4>Địa chỉ</h4>
-                  <p>123 Nguyễn Văn Cừ, Quận 5</p>
-                  <p>TP. Hồ Chí Minh, Việt Nam</p>
-                </div>
-              </div>
-
-              <div class="contact-method">
-                <div class="method-icon">🕒</div>
-                <div class="method-content">
-                  <h4>Giờ làm việc</h4>
-                  <p>Thứ 2 - Thứ 6: 8:00 - 20:00</p>
-                  <p>Thứ 7 - CN: 8:00 - 17:00</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Social Media -->
-            <div class="social-media">
-              <h4>Theo dõi chúng tôi</h4>
-              <div class="social-links">
-                <a href="#" class="social-link facebook">Facebook</a>
-                <a href="#" class="social-link youtube">YouTube</a>
-                <a href="#" class="social-link instagram">Instagram</a>
-                <a href="#" class="social-link linkedin">LinkedIn</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Map Section -->
-        <div class="map-section">
-          <h2>Vị trí của chúng tôi</h2>
-          <div class="map-container">
-            <div class="map-placeholder">
-              <p>🗺️ Bản đồ Google Maps sẽ được tích hợp tại đây</p>
-              <p>123 Nguyễn Văn Cừ, Quận 5, TP. Hồ Chí Minh</p>
             </div>
           </div>
         </div>
