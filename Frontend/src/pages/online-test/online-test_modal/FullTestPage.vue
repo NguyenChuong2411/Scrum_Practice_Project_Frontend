@@ -124,14 +124,14 @@
                       v-for="option in question.options" 
                       :key="option.id"
                       class="answer-option"
-                      :class="{ selected: selectedAnswers[question.id] === option.id }"
+                      :class="{ selected: selectedAnswers[question.id] === option.optionLabel }" 
                     >
                       <input 
                         type="radio" 
                         :name="`question-${question.id}`"
-                        :value="option.id"
+                        :value="option.optionLabel" 
                         v-model="selectedAnswers[question.id]"
-                        @change="saveAnswer(question.id, option.id)"
+                        @change="saveAnswer(question.id, option.optionLabel)" 
                       />
                       <span class="option-label">{{ option.optionLabel }}</span>
                       <span class="option-text">{{ option.optionText }}</span>
@@ -240,8 +240,23 @@
     <div v-if="showSubmitConfirm" class="modal-overlay" @click="showSubmitConfirm = false">
       <div class="confirm-modal" @click.stop>
         <h3>Xác nhận nộp bài</h3>
-        <p>Bạn đã hoàn thành {{ answeredCount }}/{{ totalQuestions }} câu hỏi.</p>
-        <p>Bạn có chắc chắn muốn nộp bài?</p>
+        <div class="submit-summary">
+          <div class="summary-item">
+            <span class="summary-label">Đã hoàn thành:</span>
+            <span class="summary-value">{{ answeredCount }}/{{ totalQuestions }} câu hỏi</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Còn lại:</span>
+            <span class="summary-value">{{ totalQuestions - answeredCount }} câu hỏi</span>
+          </div>
+          <div v-if="timeRemaining > 0" class="summary-item">
+            <span class="summary-label">Thời gian còn lại:</span>
+            <span class="summary-value">{{ formatTime(timeRemaining) }}</span>
+          </div>
+        </div>
+        <p class="submit-warning">
+          <strong>Lưu ý:</strong> Sau khi nộp bài, bạn không thể thay đổi đáp án. Bạn có chắc chắn muốn nộp bài?
+        </p>
         <div class="modal-actions">
           <button class="cancel-btn" @click="showSubmitConfirm = false">Kiểm tra lại</button>
           <button class="confirm-btn" @click="submitTest">Nộp bài</button>
@@ -252,9 +267,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { fetchTestDetails, fetchListeningTestDetails } from '../OnlineTestPageAPI.js'
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
+import { fetchTestDetails, fetchListeningTestDetails, submitTest as submitTestAPI } from '../OnlineTestPageAPI.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -539,8 +554,13 @@ const scrollToQuestion = (passageId, originalQuestionId) => {
 }
 
 const saveAnswer = (questionId, answer) => {
-  selectedAnswers.value[questionId] = answer
+  // Ensure questionId is string for consistency
+  const stringQuestionId = String(questionId)
+  selectedAnswers.value[stringQuestionId] = answer
   localStorage.setItem(`test_${testId}_answers`, JSON.stringify(selectedAnswers.value))
+  
+  // Debug logging
+  console.log(`Saved answer for question ${stringQuestionId}:`, answer)
 }
 
 const isQuestionAnswered = (question) => {
@@ -695,13 +715,28 @@ const onAudioEnded = () => {
 }
 
 const exitTest = () => {
-  localStorage.removeItem(`test_${testId}_answers`)
+  resetTestData()
   router.push('/online-test')
 }
 
-const submitTest = () => {
-  console.log('Submitting test with answers:', selectedAnswers.value)
-  router.push('/online-test')
+const submitTest = async () => {
+  showSubmitConfirm.value = false; // Đóng modal xác nhận
+  
+  // Dữ liệu người dùng trả lời đã có định dạng đúng
+  const submissionData = {
+    testId: parseInt(testId),
+    answers: selectedAnswers.value 
+  };
+
+  try {
+    const result = await submitTestAPI(submissionData);
+    
+    // Chuyển hướng đến trang kết quả
+    router.push(`/online-test/results/${result.attemptId}`);
+  } catch (err) {
+    console.error('Submit test error:', err);
+    alert(`Nộp bài thất bại: ${err.response?.data || err.message}. Vui lòng thử lại.`);
+  }
 }
 
 // Timer countdown
@@ -725,6 +760,23 @@ const startTimer = () => {
 // Lifecycle
 onMounted(async () => {
   try {
+    // Check if this is a fresh start (not continuing from where left off)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFreshStart = !urlParams.has('continue') || urlParams.get('continue') === 'false';
+    
+    // Also check if user navigated here from test list (fresh start)
+    const referrer = document.referrer;
+    const isFromTestList = referrer.includes('/online-test') && !referrer.includes('/online-test/full-test');
+    
+    if (isFreshStart || isFromTestList || performance.navigation.type === 1) { // type 1 = refresh
+      // Reset any existing data for fresh start
+      console.log('Fresh start detected - clearing any existing test data');
+      localStorage.removeItem(`test_${testId}_answers`);
+      localStorage.removeItem(`test_${testId}_time`);
+      localStorage.removeItem(`test_${testId}_startTime`);
+      selectedAnswers.value = {};
+    }
+    
     // Try to fetch as listening test first, then fallback to reading test
     let data;
     try {
@@ -785,12 +837,53 @@ const handleBeforeUnload = (e) => {
   e.returnValue = ''
 }
 
+// Reset all test data
+const resetTestData = () => {
+  console.log('Resetting test data...')
+  selectedAnswers.value = {}
+  timeRemaining.value = 3600
+  showExitConfirm.value = false
+  showSubmitConfirm.value = false
+  activePassageId.value = null
+  
+  // Clear localStorage
+  localStorage.removeItem(`test_${testId}_answers`)
+  localStorage.removeItem(`test_${testId}_time`)
+  localStorage.removeItem(`test_${testId}_startTime`)
+  
+  // Reset audio if listening test
+  if (audioElement.value) {
+    audioElement.value.pause()
+    audioElement.value.currentTime = 0
+    isPlaying.value = false
+    currentAudioTime.value = 0
+  }
+}
+
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onUnmounted(() => {
   window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
+// Reset data when component is unmounted (user navigates away)
+onBeforeUnmount(() => {
+  resetTestData()
+})
+
+// Reset data when user navigates to different route
+onBeforeRouteLeave((to, from, next) => {
+  // If user is navigating to results page, don't reset (they submitted the test)
+  if (to.path.includes('/online-test/results/')) {
+    next()
+    return
+  }
+  
+  // For any other navigation, reset the data
+  resetTestData()
+  next()
 })
 </script>
 

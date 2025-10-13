@@ -605,6 +605,50 @@
     background: #dc2626;
 }
 
+/* Submit Summary */
+.submit-summary {
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.summary-item:last-child {
+    margin-bottom: 0;
+}
+
+.summary-label {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.summary-value {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.submit-warning {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin: 1rem 0;
+    color: #92400e;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.submit-warning strong {
+    color: #78350f;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
     .test-content {
