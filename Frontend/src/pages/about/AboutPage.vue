@@ -29,7 +29,6 @@
       <h2 class="view-title">Tầm nhìn</h2>
       <p class="view-desc">
         Đào tạo hàng triệu học viên Việt Nam nói tiếng Anh như người bản ngữ.
-
         Trở thành 1 trong top 5 thương hiệu đào tạo ngôn ngữ, đặc biệt là tiếng Anh.
 
         Trở thành hệ thống được kiểm định khảo thí quốc tế.
@@ -67,5 +66,3 @@ onMounted(() => {
   console.log('Home page loaded')
 })
 </script>
-
-<style src="./AboutPage.css" scoped></style>
