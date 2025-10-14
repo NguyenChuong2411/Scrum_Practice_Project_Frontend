@@ -48,6 +48,54 @@
       </ul>
     </div>
 
+    <!-- Account Section -->
+    <div class="account-section">
+      <div class="account-dropdown" @click="toggleAccountDropdown" ref="accountDropdown">
+        <div class="account-trigger">
+          <i class="fa-solid fa-user-circle account-icon"></i>
+          <span class="account-text">{{ isLoggedIn ? userName : 'Tài khoản' }}</span>
+          <i class="fa-solid fa-sun dropdown-arrow" :class="{ 'rotate': isAccountDropdownOpen }"></i>
+        </div>
+        
+
+        <div class="dropdown-menu" :class="{ 'show': isAccountDropdownOpen }">
+          <div v-if="isLoggedIn" class="dropdown-content">
+            <div class="dropdown-header">
+              <div class="user-avatar">
+                <i class="fa-solid fa-user-circle"></i>
+              </div>
+              <div class="user-info">
+                <span class="user-name">{{ userName }}</span>
+                <span class="user-email">{{ userEmail }}</span>
+              </div>
+            </div>
+            <hr class="dropdown-divider">
+            <a href="#" class="dropdown-item" @click="goToProfile">
+              <i class="fa-solid fa-user"></i>
+              <span>Thông tin cá nhân</span>
+            </a>
+            <a href="#" class="dropdown-item" @click="goToHistory">
+              <i class="fa-solid fa-address-book"></i>
+              <span>Lịch sử làm bài</span>
+            </a>
+            <hr class="dropdown-divider">
+            <a href="#" class="dropdown-item logout" @click="handleLogout">
+              <span>Đăng xuất</span>
+            </a>
+          </div>
+
+          <div v-else class="dropdown-content">
+            <a href="#" class="dropdown-item login" @click="handleLogin">
+              <span>Đăng nhập</span>
+            </a>
+            <a href="#" class="dropdown-item register" @click="handleRegister">
+              <span>Đăng ký</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Mobile Menu Toggle (for responsive design) -->
     <div class="mobile-menu-toggle" @click="toggleMobileMenu">
       <span class="hamburger-line"></span>
@@ -75,13 +123,20 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import './NavigationBar.css'
 
 // Reactive data
 const isMobileMenuOpen = ref(false)
+const isAccountDropdownOpen = ref(false)
 const route = useRoute()
+const router = useRouter()
+
+// Account related data (mock data - replace with real authentication later)
+const isLoggedIn = ref(false) // Change this to true to test logged in state
+const userName = ref('Nguyễn Văn A') // Mock user name
+const userEmail = ref('nguyenvana@email.com') // Mock user email
 
 // Navigation items configuration
 const navigationItems = [
@@ -103,6 +158,15 @@ const closeMobileMenu = () => {
   isMobileMenuOpen.value = false
 }
 
+const toggleAccountDropdown = (event) => {
+  event.stopPropagation()
+  isAccountDropdownOpen.value = !isAccountDropdownOpen.value
+}
+
+const closeAccountDropdown = () => {
+  isAccountDropdownOpen.value = false
+}
+
 const isActiveRoute = (path) => {
   // Special case for online-test routes
   if (path === '/online-test') {
@@ -110,4 +174,66 @@ const isActiveRoute = (path) => {
   }
   return route.path === path
 }
+
+// Account actions
+const handleLogin = () => {
+  closeAccountDropdown()
+  // Navigate to login page
+  router.push('/login')
+}
+
+const handleRegister = () => {
+  closeAccountDropdown()
+  // Navigate to register page
+  router.push('/login?mode=register')
+}
+
+const handleLogout = () => {
+  closeAccountDropdown()
+  // TODO: Implement logout logic
+  isLoggedIn.value = false
+  userName.value = ''
+  userEmail.value = ''
+  console.log('User logged out')
+}
+
+const goToProfile = () => {
+  closeAccountDropdown()
+  // TODO: Navigate to profile page
+  console.log('Navigate to profile')
+  // router.push('/profile')
+}
+
+const goToSettings = () => {
+  closeAccountDropdown()
+  // TODO: Navigate to settings page
+  console.log('Navigate to settings')
+  // router.push('/settings')
+}
+
+const goToHistory = () => {
+  closeAccountDropdown()
+  // TODO: Navigate to test history page
+  console.log('Navigate to test history')
+  // router.push('/test-history')
+}
+
+// Handle click outside to close dropdowns
+const handleClickOutside = (event) => {
+  if (isAccountDropdownOpen.value) {
+    closeAccountDropdown()
+  }
+  if (isMobileMenuOpen.value) {
+    closeMobileMenu()
+  }
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
