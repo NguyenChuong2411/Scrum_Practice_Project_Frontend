@@ -125,6 +125,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { authAPI } from '@/services/AuthAPI.js'
 import './NavigationBar.css'
 
 // Reactive data
@@ -133,10 +134,37 @@ const isAccountDropdownOpen = ref(false)
 const route = useRoute()
 const router = useRouter()
 
-// Account related data (mock data - replace with real authentication later)
-const isLoggedIn = ref(false) // Change this to true to test logged in state
-const userName = ref('Nguyễn Văn A') // Mock user name
-const userEmail = ref('nguyenvana@email.com') // Mock user email
+// Account related data - sử dụng thực từ AuthAPI
+const isLoggedIn = ref(false)
+const userName = ref('')
+const userEmail = ref('')
+
+// Khởi tạo trạng thái đăng nhập khi component được mount
+onMounted(() => {
+  updateAuthState()
+  // Lắng nghe sự kiện thay đổi trạng thái auth
+  window.addEventListener('auth-state-changed', updateAuthState)
+})
+
+onUnmounted(() => {
+  // Cleanup event listener
+  window.removeEventListener('auth-state-changed', updateAuthState)
+})
+
+// Hàm cập nhật trạng thái đăng nhập
+const updateAuthState = () => {
+  isLoggedIn.value = authAPI.isAuthenticated()
+  if (isLoggedIn.value) {
+    const userInfo = authAPI.getUserInfo()
+    if (userInfo) {
+      userName.value = userInfo.fullName || userInfo.email.split('@')[0]
+      userEmail.value = userInfo.email
+    }
+  } else {
+    userName.value = ''
+    userEmail.value = ''
+  }
+}
 
 // Navigation items configuration
 const navigationItems = [
@@ -190,11 +218,15 @@ const handleRegister = () => {
 
 const handleLogout = () => {
   closeAccountDropdown()
-  // TODO: Implement logout logic
-  isLoggedIn.value = false
-  userName.value = ''
-  userEmail.value = ''
-  console.log('User logged out')
+  // Thực hiện logout với AuthAPI
+  const result = authAPI.logout()
+  if (result.success) {
+    // Cập nhật trạng thái UI
+    updateAuthState()
+    // Thông báo và redirect về trang chủ
+    alert('Đăng xuất thành công!')
+    router.push('/')
+  }
 }
 
 const goToProfile = () => {
