@@ -21,7 +21,17 @@ const router = createRouter({
     {
       path: '/online-test/full-test/:testId',
       name: 'full-test',
-      component: () => import('../pages/online-test/FullTestPage.vue'),
+      component: () => import('../pages/online-test/online-test_modal/FullTestPage.vue'),
+    },
+    {
+      path: '/online-test/results/:attemptId',
+      name: 'test-result',
+      component: () => import('../pages/online-test/TestResultPage.vue'),
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../pages/login/LoginPage.vue'),
     },
     {
       path: '/news',

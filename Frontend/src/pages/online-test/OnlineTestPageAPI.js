@@ -1,0 +1,80 @@
+import axios from 'axios';
+
+// Cấu hình một instance axios với URL cơ sở của backend
+// Thay đổi port 7123 thành port của backend .NET của bạn nếu cần
+const apiClient = axios.create({
+  baseURL: 'https://localhost:7088/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Hàm để lấy danh sách tất cả bài thi
+export const fetchAllTests = async () => {
+  try {
+    const response = await apiClient.get('/OnlineTest/GetAllTests');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching all tests:', error);
+    // Ném lỗi ra ngoài để component có thể xử lý
+    throw error;
+  }
+};
+
+// Hàm để lấy chi tiết một bài thi theo ID
+export const fetchTestDetails = async (testId) => {
+  try {
+    const response = await apiClient.get(`/OnlineTest/GetTestDetails/${testId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching details for test ${testId}:`, error);
+    throw error;
+  }
+};
+
+// Hàm để lấy chi tiết bài thi Listening theo ID
+export const fetchListeningTestDetails = async (testId) => {
+  try {
+    const response = await apiClient.get(`/OnlineTest/GetListeningTestDetails/${testId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching listening test details for test ${testId}:`, error);
+    throw error;
+  }
+};
+
+// Hàm để nộp bài thi
+export const submitTest = async (submissionData) => {
+  try {
+    console.log('API: Sending submission data:', submissionData);
+    
+    // Backend expects TestSubmissionDto with specific format
+    const payload = {
+      TestId: submissionData.testId,
+      Answers: submissionData.answers // This should be Dictionary<string, JsonElement>
+    };
+    
+    console.log('API: Final payload:', JSON.stringify(payload, null, 2));
+    
+    const response = await apiClient.post('/OnlineTest/Submit', payload);
+    console.log('API: Response received:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error submitting test:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    console.error('Full error object:', error);
+    throw error;
+  }
+};
+
+// Hàm để lấy kết quả bài thi
+export const fetchTestResult = async (attemptId) => {
+  try {
+    const response = await apiClient.get(`/OnlineTest/Result/${attemptId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching test result for attempt ${attemptId}:`, error);
+    throw error;
+  }
+};
