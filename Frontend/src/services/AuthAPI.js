@@ -1,0 +1,122 @@
+import axios from 'axios'
+
+// Cấu hình axios instance
+const apiClient = axios.create({
+  baseURL: 'https://localhost:7263/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+// Interceptor để tự động thêm token vào headers
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
+// Interceptor để xử lý response và errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token hết hạn hoặc không hợp lệ
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('userInfo')
+      // Có thể redirect về login page
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+// API functions
+export const authAPI = {
+  // Đăng ký
+  register: async (registerData) => {
+    try {
+      console.log('Register API call:', registerData)
+      const response = await apiClient.post('/Auth/register', {
+        fullName: registerData.fullName,
+        email: registerData.email,
+        password: registerData.password
+      })
+      return { success: true, data: response.data }
+    } catch (error) {
+      console.error('Register error:', error)
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Đăng ký thất bại' 
+      }
+    }
+  },
+
+  // Đăng nhập
+  login: async (loginData) => {
+    try {
+      console.log('Login API call:', loginData)
+      const response = await apiClient.post('/Auth/login', {
+        email: loginData.email,
+        password: loginData.password
+      })
+      
+      if (response.data.token) {
+        // Lưu token
+        localStorage.setItem('authToken', response.data.token)
+        
+        // Decode JWT để lấy thông tin user (simple decode without verification)
+        try {
+          const tokenPayload = JSON.parse(atob(response.data.token.split('.')[1]))
+          const userInfo = {
+            id: tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'],
+            email: tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] || loginData.email,
+            fullName: tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'],
+            exp: tokenPayload.exp
+          }
+          localStorage.setItem('userInfo', JSON.stringify(userInfo))
+        } catch (decodeError) {
+          // Fallback nếu decode thất bại
+          const userInfo = {
+            email: loginData.email
+          }
+          localStorage.setItem('userInfo', JSON.stringify(userInfo))
+        }
+        
+        return { success: true, data: response.data }
+      }
+      
+      return { success: false, error: 'Không nhận được token' }
+    } catch (error) {
+      console.error('Login error:', error)
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Đăng nhập thất bại' 
+      }
+    }
+  },
+
+  // Đăng xuất
+  logout: () => {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('userInfo')
+    return { success: true }
+  },
+
+  // Kiểm tra trạng thái đăng nhập
+  isAuthenticated: () => {
+    return !!localStorage.getItem('authToken')
+  },
+
+  // Lấy thông tin user từ localStorage
+  getUserInfo: () => {
+    const userInfo = localStorage.getItem('userInfo')
+    return userInfo ? JSON.parse(userInfo) : null
+  }
+}
+
+export default authAPI

@@ -177,8 +177,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { authAPI } from '@/services/AuthAPI.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -208,6 +209,32 @@ const errors = reactive({
 })
 
 // Methods
+const clearFormAndErrors = () => {
+  // Clear form data
+  Object.keys(formData).forEach(key => {
+    if (typeof formData[key] === 'string') {
+      formData[key] = ''
+    } else if (typeof formData[key] === 'boolean') {
+      formData[key] = false
+    }
+  })
+  // Clear errors
+  Object.keys(errors).forEach(key => {
+    errors[key] = ''
+  })
+}
+
+// Watch cho sự thay đổi của route để cập nhật mode
+watch(
+  () => route.query.mode,
+  (newMode) => {
+    isRegisterMode.value = newMode === 'register'
+    // Clear form và errors khi chuyển mode
+    clearFormAndErrors()
+  },
+  { immediate: true }
+)
+
 const validateForm = () => {
   // Reset errors
   Object.keys(errors).forEach(key => {
@@ -263,54 +290,73 @@ const handleSubmit = async () => {
   isLoading.value = true
 
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
     if (isRegisterMode.value) {
       // Handle register
-      console.log('Register:', {
+      const registerData = {
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password
-      })
-      alert('Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.')
+      }
+      
+      const result = await authAPI.register(registerData)
+      
+      if (result.success) {
+        alert('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.')
+        // Chuyển sang chế độ đăng nhập
+        router.push('/login')
+        // Clear form data
+        clearFormAndErrors()
+        // Keep email for convenience
+        formData.email = registerData.email
+      } else {
+        // Hiển thị lỗi từ server
+        if (result.error.includes('email')) {
+          errors.email = 'Email này đã được sử dụng'
+        } else {
+          alert(`Đăng ký thất bại: ${result.error}`)
+        }
+      }
     } else {
       // Handle login
-      console.log('Login:', {
+      const loginData = {
         email: formData.email,
         password: formData.password,
         rememberMe: formData.rememberMe
-      })
-      alert('Đăng nhập thành công!')
-      // Redirect to home page or previous page
-      router.push('/')
+      }
+      
+      const result = await authAPI.login(loginData)
+      
+      if (result.success) {
+        alert('Đăng nhập thành công!')
+        // Emit event để NavigationBar cập nhật trạng thái
+        window.dispatchEvent(new Event('auth-state-changed'))
+        // Redirect to home page or previous page
+        const redirectTo = route.query.redirect || '/'
+        router.push(redirectTo)
+      } else {
+        // Hiển thị lỗi từ server
+        if (result.error.includes('email') || result.error.includes('password') || result.error.includes('không chính xác')) {
+          errors.email = 'Email hoặc mật khẩu không chính xác'
+          errors.password = 'Email hoặc mật khẩu không chính xác'
+        } else {
+          alert(`Đăng nhập thất bại: ${result.error}`)
+        }
+      }
     }
   } catch (error) {
     console.error('Auth error:', error)
-    alert('Có lỗi xảy ra. Vui lòng thử lại!')
+    alert('Có lỗi xảy ra. Vui lòng kiểm tra kết nối internet và thử lại!')
   } finally {
     isLoading.value = false
   }
 }
 
 const toggleMode = () => {
-  isRegisterMode.value = !isRegisterMode.value
-  // Clear form
-  Object.keys(formData).forEach(key => {
-    if (typeof formData[key] === 'string') {
-      formData[key] = ''
-    } else if (typeof formData[key] === 'boolean') {
-      formData[key] = false
-    }
-  })
-  // Clear errors
-  Object.keys(errors).forEach(key => {
-    errors[key] = ''
-  })
-  // Update URL
+  const newMode = !isRegisterMode.value
+  // Update URL - watcher sẽ tự động handle việc clear form
   router.push({
     path: '/login',
-    query: isRegisterMode.value ? { mode: 'register' } : {}
+    query: newMode ? { mode: 'register' } : {}
   })
 }
 
