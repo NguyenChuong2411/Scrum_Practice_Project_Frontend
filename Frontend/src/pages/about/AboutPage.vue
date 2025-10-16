@@ -1,60 +1,125 @@
 <template>
   <div class="about-page">
-    <!-- Header Section -->
-    <section class="page-header">
-      <div class="container">
-        <h1 class="page-title">Về Enly</h1>
-        <p class="page-subtitle">Trung tâm tiếng Anh hàng đầu Việt Nam</p>
+    <section class="native-section">
+      <div class="native-bg">
+        <img src="../../images/2_about/Container.png" alt="Background" class="native-bg-img" />
       </div>
-    </section>
-
-    <!-- About Content -->
-    <section class="about-content">
-      <div class="container">
-        <div class="content-grid">
-          <div class="text-content">
-            <h2>Câu chuyện của chúng tôi</h2>
-            <p>
-              Enly được thành lập với sứ mệnh mang đến trải nghiệm học tiếng Anh 
-              độc đáo và hiệu quả nhất cho người Việt Nam.
-            </p>
-            <p>
-              Với đội ngũ giáo viên native speakers giàu kinh nghiệm và phương pháp 
-              giảng dạy hiện đại, chúng tôi cam kết giúp học viên đạt được mục tiêu 
-              học tập của mình.
-            </p>
-          </div>
-          <div class="image-content">
-            <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=400&q=80" alt="About Enly" class="about-image" />
+      <div class="native-main">
+        <div class="native-left">
+          <h1 class="native-big-title">Một thập kỷ<br>"Nói tiếng Anh<br>như người bản ngữ"</h1>
+        </div>
+        <div class="native-right">
+          <div class="native-desc">
+            Enly English được thành lập vào 2013 với sứ mệnh đào tạo ngôn ngữ cho thế hệ trẻ Việt Nam,với tôn chỉ "Native-like speakers" hơn 10 năm qua Enly tự hào đã giúp 5000 học viên "nói tiếng Anh như người bản ngữ". Nhiều học viên đạt thành tựu xuất sắc trong các kỳ thi quốc tế, giành học bổng giá trị tại các trường đại học danh tiếng trên thế giới.<br><br>
+            Tới hiện tại, Enly đã phát triển trở thành hệ thống trung tâm đào tạo tiếng Anh bản ngữ hàng đầu với 5 trung tâm tại Hà Nội, chương trình tiếng Anh phổ thông Cambridge tại Era School.
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- Mission & Vision -->
-    <section class="mission-vision">
-      <div class="container">
-        <div class="mv-grid">
-          <div class="mv-card">
-            <h3>Sứ mệnh</h3>
-            <p>Tạo ra môi trường học tiếng Anh tự nhiên và hiệu quả nhất cho mọi học viên</p>
-          </div>
-          <div class="mv-card">
-            <h3>Tầm nhìn</h3>
-            <p>Trở thành trung tâm tiếng Anh số 1 Việt Nam với chất lượng giảng dạy quốc tế</p>
-          </div>
-        </div>
+      <div class="native-images-row">
+        <img src="../../images/2_about/Banner về chúng tôi.png" alt="Banner" class="native-img-card native-img-main" />
       </div>
     </section>
+    
+<section class="view-section">
+  <div class="view-main">
+    <!-- Left content -->
+    <div class="view-card view-left">
+      <h2 class="view-title">Tầm nhìn</h2>
+      <p class="view-desc">
+        Đào tạo hàng triệu học viên Việt Nam nói tiếng Anh như người bản ngữ.<br>
+        Trở thành hệ thống được kiểm định khảo thí quốc tế.
+      </p>
+    </div>
+
+    <!-- Center image -->
+    <div class="view-image-wrapper">
+      <img src="../../images/2_about/Banner về chúng tôi_ Tầm nhìn & sứ mệnh.png"
+           alt="Tầm nhìn & Sứ mệnh" class="view-center-img" />
+    </div>
+
+    <!-- Right content -->
+    <div class="view-card view-right">
+      <h2 class="view-title">Sứ mệnh</h2>
+      <p class="view-desc">
+        Giúp học viên phát triển toàn diện, tự tin vươn ra thế giới, hiện thực<br>
+        khát vọng, cống hiến cho xã hội, đất nước Việt Nam.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Core section -->
+ <section class="core-section">
+  <div class="core-bg"></div>
+
+  <div class="core-content">
+    <h2 class="core-title">Giá trị cốt lõi</h2>
+    <p class="core-subtitle">
+      Enly English đặt tâm huyết vào việc xây dựng và duy trì những giá trị cốt lõi quan trọng:
+    </p>
+
+    <div class="core-cards">
+      <div class="core-card">
+        <img src="../../images/2_about/1.png" alt="Chuẩn quốc tế" class="core-icon" />
+        <h3>Chuẩn quốc tế</h3>
+        <p>Đảm bảo chương trình học đạt tiêu chuẩn quốc tế, giúp học viên tự tin sử dụng tiếng Anh trong môi trường đa văn hóa.</p>
+      </div>
+
+      <div class="core-card">
+        <img src="../../images/2_about/2.png" alt="Sáng tạo" class="core-icon" />
+        <h3>Sáng tạo</h3>
+        <p>Các phương pháp giáo dục, hoạt động tiếp cận ngôn ngữ mới được cập nhật liên tục, đảm bảo học viên học hiệu quả nhất.</p>
+      </div>
+
+      <div class="core-card">
+        <img src="../../images/2_about/3.png" alt="Tận tâm" class="core-icon" />
+        <h3>Tận tâm</h3>
+        <p>Hiểu rõ nhu cầu học viên, liên tục thiết kế lộ trình cá nhân hóa giúp đạt mục tiêu nhanh nhất.</p>
+      </div>
+
+      <div class="core-card">
+        <img src="../../images/2_about/4.png" alt="Phát triển" class="core-icon" />
+        <h3>Phát triển</h3>
+        <p>Không ngừng nâng cao chất lượng đào tạo, mang lại giá trị bền vững cho học viên và cộng đồng.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
+import './AboutPage.css'
+
+let scrollPos = 0;
+let cards = null;
+let wheelHandler = null;
 
 onMounted(() => {
-  console.log('About page loaded')
-})
-</script>
+  cards = document.querySelector('.core-cards');
+  scrollPos = 0;
+  wheelHandler = (e) => {
+    if (!cards) return;
+    if (window.innerWidth > 900) {
+      // Chỉ áp dụng cho desktop
+      if (e.target.closest('.core-section')) {
+        e.preventDefault();
+        // deltaY < 0: cuộn lên (dịch phải), deltaY > 0: cuộn xuống (dịch trái)
+        scrollPos += e.deltaY * 0.7;
+        const maxScroll = cards.scrollWidth - window.innerWidth;
+        if (scrollPos < 0) scrollPos = 0;
+        if (scrollPos > maxScroll) scrollPos = maxScroll;
+        cards.style.transform = `translateX(-${scrollPos}px)`;
+      }
+    }
+  };
+  window.addEventListener('wheel', wheelHandler, { passive: false });
+  console.log('Home page loaded')
+});
 
-<style src="./AboutPage.css" scoped></style>
+onBeforeUnmount(() => {
+  if (wheelHandler) window.removeEventListener('wheel', wheelHandler);
+});
+</script>

@@ -17,9 +17,11 @@
 }
 
 /* Logo Section */
+/* Logo Section */
 .nav-logo {
   display: flex;
   align-items: center;
+  margin-left: 0;
 }
 
 .logo-link {
@@ -31,8 +33,9 @@
 }
 
 .logo-image {
-  height: 50px;
+  height: 44px;
   width: auto;
+  margin-left: 0;
 }
 
 .logo-text {
@@ -368,13 +371,32 @@
   .nav-menu {
     display: none;
   }
-  
   .mobile-menu-toggle {
     display: flex;
+    margin-right: 10px;
   }
-  
   .navigation-bar {
-    padding: 1rem;
+    padding: 0.6rem 0.5rem;
+  }
+  .nav-logo {
+    margin-left: 0;
+  }
+  .logo-link {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .navigation-bar {
+    padding: 0.4rem 0.5rem;
+  }
+  .logo-image {
+    height: 32px;
+    width: auto;
+    margin-left: 0;
+  }
+  .mobile-menu-toggle {
+    margin-right: 2px;
   }
   
   .account-section {
@@ -392,12 +414,12 @@
 
 @media (max-width: 768px) {
   .logo-text {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
-  
   .logo-image {
-    width: 35px;
-    height: 35px;
+    height: 28px;
+    width: auto;
+    margin-left: 0;
   }
   
   .dropdown-menu {
