@@ -134,7 +134,6 @@
                 {{ isRegisterMode ? 'Đăng ký' : 'Đăng nhập' }}
               </span>
               <span v-else class="loading-text">
-                <i class="fa-solid fa-spinner fa-spin"></i>
                 {{ isRegisterMode ? 'Đang đăng ký...' : 'Đang đăng nhập...' }}
               </span>
             </button>
@@ -327,6 +326,14 @@ const handleSubmit = async () => {
       const result = await authAPI.login(loginData)
       
       if (result.success) {
+        // Lấy thông tin user profile mới nhất từ server
+        try {
+          await authAPI.getUserProfile()
+        } catch (profileError) {
+          console.error('Failed to fetch user profile after login:', profileError)
+          // Không block login flow nếu lỗi lấy profile
+        }
+        
         alert('Đăng nhập thành công!')
         // Emit event để NavigationBar cập nhật trạng thái
         window.dispatchEvent(new Event('auth-state-changed'))

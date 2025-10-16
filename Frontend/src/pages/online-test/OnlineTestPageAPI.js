@@ -9,6 +9,33 @@ const apiClient = axios.create({
   }
 });
 
+// Interceptor để tự động thêm JWT token vào headers
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+);
+
+// Interceptor để xử lý response và errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token hết hạn hoặc không hợp lệ
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('userInfo')
+      // Redirect về login page
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+);
+
 // Hàm để lấy danh sách tất cả bài thi
 export const fetchAllTests = async () => {
   try {
