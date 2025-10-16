@@ -22,7 +22,22 @@
     <!-- Test List -->
     <section class="test-list-section">
       <div class="content-container">
-        <div class="box-list-container">
+        <!-- Loading State -->
+        <div v-if="isLoading" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Đang tải danh sách bài thi...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="error-container">
+          <div class="error-icon">⚠️</div>
+          <h3 class="error-title">Có lỗi xảy ra</h3>
+          <p class="error-message">{{ error }}</p>
+          <button class="retry-btn" @click="location.reload()">Thử lại</button>
+        </div>
+
+        <!-- Main Content -->
+        <div v-else class="box-list-container">
           <div class="box-list-grid" v-if="filteredTests.length > 0">
             <div 
               v-for="test in paginatedTests" 
@@ -56,18 +71,6 @@
               <!-- Test Description -->
               <div class="box-content">
                 <p class="box-description">{{ test.description }}</p>
-              </div>
-
-              <!-- Test Stats -->
-              <div class="box-stats">
-                <div class="box-stat-item">
-                  <span class="box-stat-value">{{ test.participants }}</span>
-                  <span>người tham gia</span>
-                </div>
-                <div class="box-stat-item">
-                  <span class="box-stat-value">{{ test.rating }}</span>
-                  <span>điểm đánh giá</span>
-                </div>
               </div>
 
               <!-- Test Actions -->
@@ -119,6 +122,7 @@ import TestDetailModal from './online-test_modal/TestDetailModal.vue'
 import { ref, computed, onMounted } from 'vue'
 import { fetchAllTests, fetchTestDetails } from './OnlineTestPageAPI.js'
 import { useRouter } from 'vue-router'
+import { authAPI } from '@/services/AuthAPI.js'
 
 // Search functionality
 const searchTabs = [
@@ -143,6 +147,10 @@ const selectedTest = ref(null)
 const allTests = ref([]) // <-- Khởi tạo mảng rỗng
 const isLoading = ref(true) // <-- Thêm trạng thái loading
 const error = ref(null) // <-- Thêm trạng thái lỗi
+
+// User info
+const router = useRouter()
+const userInfo = ref(null)
 
 // Computed properties
 const filteredTests = computed(() => {
@@ -231,11 +239,36 @@ const closeTestDetail = () => {
 // Hàm gọi API khi component được mounted
 onMounted(async () => {
   try {
+    // Kiểm tra xác thực trước khi gọi API
+    if (!authAPI.isAuthenticated()) {
+      router.push('/login?redirect=/online-test')
+      return
+    }
+
+    // Lấy thông tin user từ localStorage trước
+    userInfo.value = authAPI.getUserInfo()
+
+    // Cố gắng lấy thông tin user mới nhất từ server
+    try {
+      const profileResult = await authAPI.getUserProfile()
+      if (profileResult.success) {
+        userInfo.value = profileResult.data
+      }
+    } catch (profileError) {
+      console.error('Failed to fetch user profile:', profileError)
+      // Không block flow chính nếu lỗi
+    }
+
     // Gọi API để lấy dữ liệu
     const dataFromApi = await fetchAllTests();
     allTests.value = dataFromApi;
   } catch (err) {
     // Xử lý lỗi nếu API không thành công
+    if (err.response?.status === 401) {
+      // Token không hợp lệ, chuyển về login
+      router.push('/login?redirect=/online-test')
+      return
+    }
     error.value = 'Không thể tải danh sách bài thi. Vui lòng thử lại sau.';
     console.error(err);
   } finally {
