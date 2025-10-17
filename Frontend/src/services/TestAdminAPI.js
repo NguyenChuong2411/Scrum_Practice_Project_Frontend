@@ -64,7 +64,8 @@ export const TestAdminAPI = {
   async getTestById(testId) {
     try {
       const response = await apiClient.get(`/GetTestById/${testId}`)
-      return response.data
+      // Parse correctAnswers từ JSON string về raw data
+      return TestDataHelpers.parseTestDataFromBackend(response.data)
     } catch (error) {
       if (error.response?.status === 404) {
         throw new Error('Không tìm thấy đề thi')
@@ -76,7 +77,9 @@ export const TestAdminAPI = {
   // Tạo test mới
   async createTest(testData) {
     try {
-      const response = await apiClient.post('/CreateTest', testData)
+      // Import TestDataHelpers để format data
+      const formattedData = TestDataHelpers.formatTestDataForBackend(testData)
+      const response = await apiClient.post('/CreateTest', formattedData)
       return response.data
     } catch (error) {
       if (error.response?.status === 400) {
@@ -89,7 +92,9 @@ export const TestAdminAPI = {
   // Cập nhật test
   async updateTest(testId, testData) {
     try {
-      const response = await apiClient.put(`/UpdateTest/${testId}`, testData)
+      // Import TestDataHelpers để format data
+      const formattedData = TestDataHelpers.formatTestDataForBackend(testData)
+      const response = await apiClient.put(`/UpdateTest/${testId}`, formattedData)
       return response.data
     } catch (error) {
       if (error.response?.status === 404) {
@@ -159,15 +164,15 @@ export const TestDataHelpers = {
     }
   },
 
-  // Tạo question rỗng
-  createEmptyQuestion(questionNumber = 1, questionType = 'single-choice') {
+  // Tạo question rỗng - không set questionType mặc định để admin phải chọn
+  createEmptyQuestion(questionNumber = 1, questionType = '') {
     return {
       questionNumber: questionNumber,
       questionType: questionType,
       prompt: '',
       tableData: null,
       correctAnswers: '',
-      options: []
+      answerOptions: []
     }
   },
 
@@ -178,6 +183,125 @@ export const TestDataHelpers = {
       optionText: '',
       displayOrder: displayOrder
     }
+  },
+
+  // Parse correctAnswers từ backend (parse JSON string về object/string)
+  parseCorrectAnswersFromBackend(question) {
+    if (!question.correctAnswers) return ''
+    
+    // If it's already an object, return as is
+    if (typeof question.correctAnswers === 'object') {
+      return question.correctAnswers
+    }
+    
+    // If it's a string, try to parse JSON
+    if (typeof question.correctAnswers === 'string') {
+      try {
+        const parsed = JSON.parse(question.correctAnswers)
+        
+        // If it's a simple { answer: "value" } format, extract the value
+        if (parsed && typeof parsed === 'object' && 'answer' in parsed) {
+          return parsed.answer
+        }
+        
+        // Otherwise return the parsed object (for table type)
+        return parsed
+      } catch {
+        // If JSON parse fails, return the string as is
+        return question.correctAnswers
+      }
+    }
+    
+    return question.correctAnswers
+  },
+
+  // Format correctAnswers cho backend (stringify nếu chưa phải string)
+  formatCorrectAnswersForBackend(question) {
+    if (!question.correctAnswers) return ''
+    
+    // Nếu đã là string, return as is
+    if (typeof question.correctAnswers === 'string') {
+      // Check if it's already JSON formatted
+      try {
+        JSON.parse(question.correctAnswers)
+        return question.correctAnswers // Already JSON string
+      } catch {
+        // Plain string - wrap in JSON
+        return JSON.stringify({ answer: question.correctAnswers })
+      }
+    }
+    
+    // If it's object (multiple-choice label or table dict), stringify it
+    if (typeof question.correctAnswers === 'object') {
+      return JSON.stringify(question.correctAnswers)
+    }
+    
+    // Otherwise wrap in JSON
+    return JSON.stringify({ answer: String(question.correctAnswers) })
+  },
+
+  // Parse toàn bộ test data từ backend
+  parseTestDataFromBackend(testData) {
+    const parsedData = { ...testData }
+    
+    // Parse passages questions
+    if (parsedData.passages) {
+      parsedData.passages = parsedData.passages.map(passage => ({
+        ...passage,
+        questions: passage.questions.map(q => ({
+          ...q,
+          correctAnswers: this.parseCorrectAnswersFromBackend(q)
+        }))
+      }))
+    }
+    
+    // Parse listening parts questions
+    if (parsedData.listeningParts) {
+      parsedData.listeningParts = parsedData.listeningParts.map(part => ({
+        ...part,
+        questionGroups: part.questionGroups.map(group => ({
+          ...group,
+          questions: group.questions.map(q => ({
+            ...q,
+            correctAnswers: this.parseCorrectAnswersFromBackend(q)
+          }))
+        }))
+      }))
+    }
+    
+    return parsedData
+  },
+
+  // Format toàn bộ test data trước khi gửi lên backend
+  formatTestDataForBackend(testData) {
+    const formattedData = { ...testData }
+    
+    // Format passages questions
+    if (formattedData.passages) {
+      formattedData.passages = formattedData.passages.map(passage => ({
+        ...passage,
+        questions: passage.questions.map(q => ({
+          ...q,
+          correctAnswers: this.formatCorrectAnswersForBackend(q)
+        }))
+      }))
+    }
+    
+    // Format listening parts questions
+    if (formattedData.listeningParts) {
+      formattedData.listeningParts = formattedData.listeningParts.map(part => ({
+        ...part,
+        questionGroups: part.questionGroups.map(group => ({
+          ...group,
+          questions: group.questions.map(q => ({
+            ...q,
+            correctAnswers: this.formatCorrectAnswersForBackend(q)
+          }))
+        }))
+      }))
+    }
+    
+    return formattedData
   },
 
   // Validate test data trước khi gửi
@@ -209,7 +333,12 @@ export const TestDataHelpers = {
         if (!question.prompt?.trim()) {
           errors.push(`Đoạn văn ${pIndex + 1}, Câu hỏi ${qIndex + 1}: Câu hỏi không được để trống`)
         }
-        if (!question.correctAnswers?.trim()) {
+        // Validate correctAnswers - can be string or object
+        if (!question.correctAnswers) {
+          errors.push(`Đoạn văn ${pIndex + 1}, Câu hỏi ${qIndex + 1}: Đáp án đúng không được để trống`)
+        } else if (typeof question.correctAnswers === 'string' && !question.correctAnswers.trim()) {
+          errors.push(`Đoạn văn ${pIndex + 1}, Câu hỏi ${qIndex + 1}: Đáp án đúng không được để trống`)
+        } else if (typeof question.correctAnswers === 'object' && Object.keys(question.correctAnswers).length === 0) {
           errors.push(`Đoạn văn ${pIndex + 1}, Câu hỏi ${qIndex + 1}: Đáp án đúng không được để trống`)
         }
       })
@@ -226,7 +355,12 @@ export const TestDataHelpers = {
           if (!question.prompt?.trim()) {
             errors.push(`Listening Part ${pIndex + 1}, Nhóm ${gIndex + 1}, Câu hỏi ${qIndex + 1}: Câu hỏi không được để trống`)
           }
-          if (!question.correctAnswers?.trim()) {
+          // Validate correctAnswers - can be string or object
+          if (!question.correctAnswers) {
+            errors.push(`Listening Part ${pIndex + 1}, Nhóm ${gIndex + 1}, Câu hỏi ${qIndex + 1}: Đáp án đúng không được để trống`)
+          } else if (typeof question.correctAnswers === 'string' && !question.correctAnswers.trim()) {
+            errors.push(`Listening Part ${pIndex + 1}, Nhóm ${gIndex + 1}, Câu hỏi ${qIndex + 1}: Đáp án đúng không được để trống`)
+          } else if (typeof question.correctAnswers === 'object' && Object.keys(question.correctAnswers).length === 0) {
             errors.push(`Listening Part ${pIndex + 1}, Nhóm ${gIndex + 1}, Câu hỏi ${qIndex + 1}: Đáp án đúng không được để trống`)
           }
         })

@@ -270,10 +270,10 @@ const joinDiscussion = () => {
 
 /* Modal Header */
 .modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 2rem;
-  border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  padding: 2rem !important;
+  border-radius: 1rem 1rem 0 0 !important;
 }
 
 .header-content {

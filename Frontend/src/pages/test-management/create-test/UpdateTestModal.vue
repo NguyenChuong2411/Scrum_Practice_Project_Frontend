@@ -1,10 +1,10 @@
 <template>
   <div class="modal-overlay" @click="$emit('close')">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
+    <div class="modal-content" :class="{ 'view-only-mode': viewOnly }" @click.stop>
+      <div class="modal-header" :class="viewOnly ? 'info' : 'success'">
         <h3>
-          <i class="fa-solid fa-plus"></i>
-          Tạo đề thi mới
+          <i :class="viewOnly ? 'fa-solid fa-eye' : 'fa-solid fa-edit'"></i>
+          {{ viewOnly ? 'Xem chi tiết đề thi' : 'Chỉnh sửa đề thi' }}
         </h3>
         <button class="close-btn" @click="$emit('close')">
           <i class="fa-solid fa-times"></i>
@@ -12,11 +12,39 @@
       </div>
       
       <div class="modal-body">
-        <form @submit.prevent="handleSubmit" class="test-form">
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Đang tải dữ liệu đề thi...</p>
+          </div>
+        </div>
+
+        <form v-else @submit.prevent="handleSubmit" class="test-form">
           <!-- Basic Information -->
           <div class="form-section">
             <h4 class="section-title">Thông tin cơ bản</h4>
             
+            <div class="form-row">
+              <div class="form-group">
+                <label>ID đề thi</label>
+                <input 
+                  type="text" 
+                  :value="formData.id" 
+                  disabled
+                  class="form-input disabled"
+                />
+              </div>
+              <div class="form-group">
+                <label>Ngày tạo</label>
+                <input 
+                  type="text" 
+                  :value="formatDate(formData.createdAt)" 
+                  disabled
+                  class="form-input disabled"
+                />
+              </div>
+            </div>
+
             <div class="form-row">
               <div class="form-group">
                 <label>Tên đề thi *</label>
@@ -26,11 +54,13 @@
                   required 
                   placeholder="Nhập tên đề thi..."
                   class="form-input"
+                  :disabled="viewOnly"
+                  :class="{ 'disabled': viewOnly }"
                 />
               </div>
               <div class="form-group">
                 <label>Loại đề thi *</label>
-                <select v-model="formData.testTypeId" required class="form-select">
+                <select v-model="formData.testTypeId" required class="form-select" :disabled="viewOnly" :class="{ 'disabled': viewOnly }">
                   <option value="">Chọn loại đề thi</option>
                   <option :value="type.id" v-for="type in testTypes" :key="type.id">
                     {{ type.name }}
@@ -49,6 +79,8 @@
                   min="1" 
                   placeholder="60"
                   class="form-input"
+                  :disabled="viewOnly"
+                  :class="{ 'disabled': viewOnly }"
                 />
               </div>
               <div class="form-group">
@@ -58,6 +90,8 @@
                   v-model="formData.audioFileId" 
                   placeholder="ID file âm thanh (nếu có)"
                   class="form-input"
+                  :disabled="viewOnly"
+                  :class="{ 'disabled': viewOnly }"
                 />
               </div>
             </div>
@@ -69,25 +103,24 @@
                 placeholder="Mô tả chi tiết về đề thi..."
                 rows="3"
                 class="form-textarea"
+                :disabled="viewOnly"
+                :class="{ 'disabled': viewOnly }"
               ></textarea>
             </div>
           </div>
 
-          <!-- Reading Passages Section -->
           <div class="form-section">
             <div class="section-header">
               <h4 class="section-title">
-                <i class="fa-solid fa-book-open"></i>
                 Đoạn văn Reading
               </h4>
-              <button type="button" class="btn-add" @click="addPassage">
+              <button v-if="!viewOnly" type="button" class="btn-add" @click="addPassage">
                 <i class="fa-solid fa-plus"></i>
                 Thêm đoạn văn
               </button>
             </div>
 
             <div v-if="formData.passages.length === 0" class="empty-state">
-              <i class="fa-solid fa-book-open"></i>
               <p>Chưa có đoạn văn nào. Click "Thêm đoạn văn" để bắt đầu.</p>
             </div>
 
@@ -124,7 +157,7 @@
               </div>
 
               <div class="form-group">
-                <label>Nội dung đoạn văn *</label>
+                <label>Nội dung đoạn văn</label>
                 <textarea 
                   v-model="passage.content" 
                   placeholder="Nội dung đoạn văn..."
@@ -138,7 +171,6 @@
               <div class="questions-subsection">
                 <div class="subsection-header">
                   <h6>
-                    <i class="fa-solid fa-question-circle"></i>
                     Câu hỏi ({{ passage.questions.length }})
                   </h6>
                   <button type="button" class="btn-add small" @click="addQuestionToPassage(pIndex)">
@@ -148,7 +180,6 @@
                 </div>
 
                 <div v-if="passage.questions.length === 0" class="empty-state small">
-                  <i class="fa-solid fa-question-circle"></i>
                   <p>Chưa có câu hỏi nào</p>
                 </div>
 
@@ -156,9 +187,18 @@
                   <QuestionForm 
                     :question="question"
                     :question-number="qIndex + 1"
+                    :show-id="true"
                     @update="updatePassageQuestion(pIndex, qIndex, $event)"
                     @remove="removePassageQuestion(pIndex, qIndex)"
                   />
+                </div>
+
+                <!-- Bottom Add Question Button -->
+                <div v-if="passage.questions.length > 0" class="bottom-add-button">
+                  <button type="button" class="btn-add" @click="addQuestionToPassage(pIndex)">
+                    <i class="fa-solid fa-plus"></i>
+                    Thêm câu hỏi
+                  </button>
                 </div>
               </div>
             </div>
@@ -187,6 +227,7 @@
                 <h5>
                   <i class="fa-solid fa-volume-up"></i>
                   Part {{ partIndex + 1 }}
+                  <span v-if="part.id" class="id-badge">ID: {{ part.id }}</span>
                 </h5>
                 <button type="button" class="btn-remove" @click="removeListeningPart(partIndex)">
                   <i class="fa-solid fa-trash"></i>
@@ -237,6 +278,7 @@
                     <h6>
                       <i class="fa-solid fa-folder"></i>
                       Nhóm {{ groupIndex + 1 }}
+                      <span v-if="group.id" class="id-badge">ID: {{ group.id }}</span>
                     </h6>
                     <button type="button" class="btn-remove small" @click="removeQuestionGroup(partIndex, groupIndex)">
                       <i class="fa-solid fa-trash"></i>
@@ -286,9 +328,18 @@
                       <QuestionForm 
                         :question="question"
                         :question-number="qIndex + 1"
+                        :show-id="true"
                         @update="updateGroupQuestion(partIndex, groupIndex, qIndex, $event)"
                         @remove="removeGroupQuestion(partIndex, groupIndex, qIndex)"
                       />
+                    </div>
+
+                    <!-- Bottom Add Question Button -->
+                    <div v-if="group.questions.length > 0" class="bottom-add-button">
+                      <button type="button" class="btn-add" @click="addQuestionToGroup(partIndex, groupIndex)">
+                        <i class="fa-solid fa-plus"></i>
+                        Thêm câu hỏi
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -300,13 +351,12 @@
 
       <div class="modal-footer">
         <button type="button" class="btn secondary" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
-          Hủy bỏ
+          {{ viewOnly ? 'Đóng' : 'Hủy bỏ' }}
         </button>
-        <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving">
+        <button v-if="!viewOnly" type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving || isLoading">
           <i v-if="isSaving" class="fa-solid fa-spinner fa-spin"></i>
           <i v-else class="fa-solid fa-save"></i>
-          {{ isSaving ? 'Đang tạo...' : 'Tạo đề thi' }}
+          {{ isSaving ? 'Đang cập nhật...' : 'Cập nhật đề thi' }}
         </button>
       </div>
     </div>
@@ -314,9 +364,9 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import QuestionForm from './QuestionForm.vue'
-import { TestDataHelpers } from '@/services/TestAdminAPI.js'
+import { ref, watch, onMounted } from 'vue'
+import QuestionForm from './QuestionFormNew.vue'
+import { TestDataHelpers, TestAdminAPI } from '@/services/TestAdminAPI.js'
 
 const props = defineProps({
   testTypes: {
@@ -326,13 +376,51 @@ const props = defineProps({
   isSaving: {
     type: Boolean,
     default: false
+  },
+  testId: {
+    type: [Number, String],
+    required: true
+  },
+  viewOnly: {
+    type: Boolean,
+    default: false
   }
 })
 
 const emit = defineEmits(['close', 'save'])
 
-// Form data
+// State
+const isLoading = ref(false)
 const formData = ref(TestDataHelpers.createEmptyTest())
+
+// Load test data
+const loadTestData = async () => {
+  if (!props.testId) return
+  
+  isLoading.value = true
+  try {
+    const testData = await TestAdminAPI.getTestById(props.testId)
+    formData.value = { ...testData }
+  } catch (error) {
+    console.error('Error loading test data:', error)
+    alert('Không thể tải dữ liệu đề thi: ' + error.message)
+    emit('close')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Utility function
+const formatDate = (date) => {
+  if (!date) return 'N/A'
+  return new Intl.DateTimeFormat('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(date))
+}
 
 // Passage management
 const addPassage = () => {
@@ -341,11 +429,13 @@ const addPassage = () => {
 }
 
 const removePassage = (index) => {
-  formData.value.passages.splice(index, 1)
-  // Update display orders
-  formData.value.passages.forEach((passage, i) => {
-    passage.displayOrder = i + 1
-  })
+  if (confirm('Bạn có chắc chắn muốn xóa đoạn văn này không?')) {
+    formData.value.passages.splice(index, 1)
+    // Update display orders
+    formData.value.passages.forEach((passage, i) => {
+      passage.displayOrder = i + 1
+    })
+  }
 }
 
 const addQuestionToPassage = (passageIndex) => {
@@ -356,11 +446,13 @@ const addQuestionToPassage = (passageIndex) => {
 }
 
 const removePassageQuestion = (passageIndex, questionIndex) => {
-  formData.value.passages[passageIndex].questions.splice(questionIndex, 1)
-  // Update question numbers
-  formData.value.passages[passageIndex].questions.forEach((question, i) => {
-    question.questionNumber = i + 1
-  })
+  if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này không?')) {
+    formData.value.passages[passageIndex].questions.splice(questionIndex, 1)
+    // Update question numbers
+    formData.value.passages[passageIndex].questions.forEach((question, i) => {
+      question.questionNumber = i + 1
+    })
+  }
 }
 
 const updatePassageQuestion = (passageIndex, questionIndex, questionData) => {
@@ -374,11 +466,13 @@ const addListeningPart = () => {
 }
 
 const removeListeningPart = (index) => {
-  formData.value.listeningParts.splice(index, 1)
-  // Update part numbers
-  formData.value.listeningParts.forEach((part, i) => {
-    part.partNumber = i + 1
-  })
+  if (confirm('Bạn có chắc chắn muốn xóa Listening Part này không?')) {
+    formData.value.listeningParts.splice(index, 1)
+    // Update part numbers
+    formData.value.listeningParts.forEach((part, i) => {
+      part.partNumber = i + 1
+    })
+  }
 }
 
 const addQuestionGroup = (partIndex) => {
@@ -388,11 +482,13 @@ const addQuestionGroup = (partIndex) => {
 }
 
 const removeQuestionGroup = (partIndex, groupIndex) => {
-  formData.value.listeningParts[partIndex].questionGroups.splice(groupIndex, 1)
-  // Update display orders
-  formData.value.listeningParts[partIndex].questionGroups.forEach((group, i) => {
-    group.displayOrder = i + 1
-  })
+  if (confirm('Bạn có chắc chắn muốn xóa nhóm câu hỏi này không?')) {
+    formData.value.listeningParts[partIndex].questionGroups.splice(groupIndex, 1)
+    // Update display orders
+    formData.value.listeningParts[partIndex].questionGroups.forEach((group, i) => {
+      group.displayOrder = i + 1
+    })
+  }
 }
 
 const addQuestionToGroup = (partIndex, groupIndex) => {
@@ -403,11 +499,13 @@ const addQuestionToGroup = (partIndex, groupIndex) => {
 }
 
 const removeGroupQuestion = (partIndex, groupIndex, questionIndex) => {
-  formData.value.listeningParts[partIndex].questionGroups[groupIndex].questions.splice(questionIndex, 1)
-  // Update question numbers
-  formData.value.listeningParts[partIndex].questionGroups[groupIndex].questions.forEach((question, i) => {
-    question.questionNumber = i + 1
-  })
+  if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này không?')) {
+    formData.value.listeningParts[partIndex].questionGroups[groupIndex].questions.splice(questionIndex, 1)
+    // Update question numbers
+    formData.value.listeningParts[partIndex].questionGroups[groupIndex].questions.forEach((question, i) => {
+      question.questionNumber = i + 1
+    })
+  }
 }
 
 const updateGroupQuestion = (partIndex, groupIndex, questionIndex, questionData) => {
@@ -417,127 +515,64 @@ const updateGroupQuestion = (partIndex, groupIndex, questionIndex, questionData)
 const handleSubmit = () => {
   emit('save', formData.value)
 }
+
+// Watch for testId changes
+watch(() => props.testId, (newTestId) => {
+  if (newTestId) {
+    loadTestData()
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  if (props.testId) {
+    loadTestData()
+  }
+})
 </script>
 
+<style src="@/assets/modal.css"></style>
+<style src="@/assets/form.css"></style>  
+<style src="@/assets/buttons.css"></style>
+<style src="../TestManagement.css" scoped></style>
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+/* Component-specific styles */
+.loading-state {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
+  min-height: 300px;
 }
 
-.modal-content {
-  background: white;
-  border-radius: 1rem;
-  width: 100%;
-  max-width: 1000px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+.loading-spinner {
+  text-align: center;
+  color: #F6871F;
 }
 
-.modal-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 1rem 1rem 0 0;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.close-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease;
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2rem;
-}
-
-.modal-footer {
-  padding: 1.5rem 2rem;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  background: #f9fafb;
-}
-
-.form-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: #f8fafc;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-}
-
-.section-title {
-  margin: 0 0 1rem 0;
-  color: #1a202c;
-  font-size: 1.125rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.loading-spinner i {
+  font-size: 2rem;
   margin-bottom: 1rem;
+  display: block;
 }
 
-.subsection-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.subsection-header h6 {
+.loading-spinner p {
   margin: 0;
-  color: #4a5568;
-  font-size: 0.95rem;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+}
+
+.id-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: #6b7280;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: normal;
+  margin-left: 0.5rem;
+}
+
+.form-input.disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
 }
 
 .passage-item,
@@ -547,24 +582,6 @@ const handleSubmit = () => {
   padding: 1.5rem;
   margin-bottom: 1rem;
   border: 1px solid #e2e8f0;
-}
-
-.item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.item-header h5 {
-  margin: 0;
-  color: #2d3748;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .question-group-item {
@@ -596,181 +613,36 @@ const handleSubmit = () => {
   margin-top: 1rem;
 }
 
-.question-item {
-  margin-bottom: 1rem;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: #9ca3af;
-}
-
-.empty-state.small {
-  padding: 1rem;
-}
-
-.empty-state i {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
-}
-
-.empty-state p {
-  margin: 0;
-  font-style: italic;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-input,
-.form-select,
-.form-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
-  font-size: 0.95rem;
-  transition: border-color 0.3s ease;
-  box-sizing: border-box;
-}
-
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #F6871F;
-  box-shadow: 0 0 0 3px rgba(246, 135, 31, 0.1);
-}
-
-.form-textarea {
-  resize: vertical;
-  font-family: inherit;
-}
-
-.btn-add {
+/* Bottom Add Button */
+.bottom-add-button {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px dashed #e2e8f0;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #48bb78;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.btn-add:hover {
-  background: #38a169;
-}
-
-.btn-add.small {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.75rem;
-}
-
-.btn-remove {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: #f56565;
-  color: white;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
-.btn-remove:hover {
-  background: #e53e3e;
-}
-
-.btn-remove.small {
-  width: 28px;
-  height: 28px;
-  font-size: 0.75rem;
-}
-
-.btn {
+.bottom-add-button .btn-add {
   padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  font-size: 0.95rem;
 }
 
-.btn:disabled {
-  opacity: 0.6;
+/* View-only mode styles */
+.view-only-mode .btn-add,
+.view-only-mode .btn-remove,
+.view-only-mode .btn-remove-option {
+  display: none !important;
+}
+
+.view-only-mode .form-input:disabled,
+.view-only-mode .form-select:disabled,
+.view-only-mode .form-textarea:disabled {
+  background-color: #f7fafc;
   cursor: not-allowed;
+  opacity: 0.7;
 }
 
-.btn.primary {
-  background: #F6871F;
-  color: white;
-}
-
-.btn.primary:hover:not(:disabled) {
-  background: #e67e22;
-}
-
-.btn.secondary {
-  background: #e5e7eb;
-  color: #374151;
-}
-
-.btn.secondary:hover {
-  background: #d1d5db;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .modal-content {
-    margin: 0;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-  
-  .modal-header {
-    border-radius: 0;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .section-header,
-  .subsection-header,
-  .item-header,
-  .group-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
+.view-only-mode .question-form {
+  pointer-events: none;
 }
 </style>

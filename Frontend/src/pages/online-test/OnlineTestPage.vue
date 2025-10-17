@@ -30,10 +30,7 @@
 
         <!-- Error State -->
         <div v-else-if="error" class="error-container">
-          <div class="error-icon">⚠️</div>
-          <h3 class="error-title">Có lỗi xảy ra</h3>
           <p class="error-message">{{ error }}</p>
-          <button class="retry-btn" @click="location.reload()">Thử lại</button>
         </div>
 
         <!-- Main Content -->

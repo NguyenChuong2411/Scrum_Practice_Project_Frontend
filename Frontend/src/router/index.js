@@ -70,6 +70,12 @@ const router = createRouter({
       component: () => import('../pages/test-management/TestManagement.vue'),
       beforeEnter: requireAuth, // Yêu cầu đăng nhập để quản lý đề thi
     },
+    {
+      path: '/test-management/create',
+      name: 'create-test',
+      component: () => import('../pages/test-management/create-test/CreateTestPage.vue'),
+      beforeEnter: requireAuth, // Yêu cầu đăng nhập để tạo đề thi
+    },
   ],
 })
 
