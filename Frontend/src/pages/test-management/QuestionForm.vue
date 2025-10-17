@@ -242,7 +242,11 @@ onMounted(() => {
 })
 </script>
 
+<style src="@/assets/form.css"></style>
+<style src="@/assets/buttons.css"></style>
+<style src="./TestManagement.css" scoped></style>
 <style scoped>
+/* Component-specific styles */
 .question-form {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -281,51 +285,6 @@ onMounted(() => {
 .id-badge.small {
   padding: 0.0625rem 0.375rem;
   font-size: 0.625rem;
-}
-
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-  font-size: 0.875rem;
-}
-
-.form-input,
-.form-select,
-.form-textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: border-color 0.3s ease;
-  box-sizing: border-box;
-}
-
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-  outline: none;
-  border-color: #F6871F;
-  box-shadow: 0 0 0 3px rgba(246, 135, 31, 0.1);
-}
-
-.form-textarea {
-  resize: vertical;
-  font-family: inherit;
 }
 
 .answer-options-section {
@@ -385,83 +344,8 @@ onMounted(() => {
   gap: 0.5rem;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 1rem;
-  color: #9ca3af;
-}
-
-.empty-state.small {
-  padding: 0.75rem;
-}
-
-.empty-state i {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
-}
-
-.empty-state p {
-  margin: 0;
-  font-style: italic;
-  font-size: 0.875rem;
-}
-
-.btn-add {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  background: #48bb78;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.btn-add:hover {
-  background: #38a169;
-}
-
-.btn-add.small {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.625rem;
-}
-
-.btn-remove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: #f56565;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 0.75rem;
-}
-
-.btn-remove:hover {
-  background: #e53e3e;
-}
-
-.btn-remove.small {
-  width: 20px;
-  height: 20px;
-  font-size: 0.625rem;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
   .question-header,
   .options-header,
   .option-header {

@@ -1,10 +1,10 @@
 <template>
   <div class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
-      <div class="modal-header success">
+      <div class="modal-header info">
         <h3>
-          <i class="fa-solid fa-edit"></i>
-          Chỉnh sửa đề thi
+          <i class="fa-solid fa-headphones"></i>
+          Tạo đề thi {{ testType }} - Listening
         </h3>
         <button class="close-btn" @click="$emit('close')">
           <i class="fa-solid fa-times"></i>
@@ -12,39 +12,11 @@
       </div>
       
       <div class="modal-body">
-        <div v-if="isLoading" class="loading-state">
-          <div class="loading-spinner">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            <p>Đang tải dữ liệu đề thi...</p>
-          </div>
-        </div>
-
-        <form v-else @submit.prevent="handleSubmit" class="test-form">
+        <form @submit.prevent="handleSubmit" class="test-form">
           <!-- Basic Information -->
           <div class="form-section">
             <h4 class="section-title">Thông tin cơ bản</h4>
             
-            <div class="form-row">
-              <div class="form-group">
-                <label>ID đề thi</label>
-                <input 
-                  type="text" 
-                  :value="formData.id" 
-                  disabled
-                  class="form-input disabled"
-                />
-              </div>
-              <div class="form-group">
-                <label>Ngày tạo</label>
-                <input 
-                  type="text" 
-                  :value="formatDate(formData.createdAt)" 
-                  disabled
-                  class="form-input disabled"
-                />
-              </div>
-            </div>
-
             <div class="form-row">
               <div class="form-group">
                 <label>Tên đề thi *</label>
@@ -52,22 +24,10 @@
                   type="text" 
                   v-model="formData.title" 
                   required 
-                  placeholder="Nhập tên đề thi..."
+                  placeholder="VD: IELTS Academic Listening Test 1"
                   class="form-input"
                 />
               </div>
-              <div class="form-group">
-                <label>Loại đề thi *</label>
-                <select v-model="formData.testTypeId" required class="form-select">
-                  <option value="">Chọn loại đề thi</option>
-                  <option :value="type.id" v-for="type in testTypes" :key="type.id">
-                    {{ type.name }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row">
               <div class="form-group">
                 <label>Thời gian (phút) *</label>
                 <input 
@@ -75,16 +35,28 @@
                   v-model="formData.durationMinutes" 
                   required 
                   min="1" 
-                  placeholder="60"
+                  placeholder="40"
                   class="form-input"
                 />
               </div>
+            </div>
+
+            <div class="form-row">
               <div class="form-group">
                 <label>File âm thanh (ID)</label>
                 <input 
                   type="number" 
                   v-model="formData.audioFileId" 
-                  placeholder="ID file âm thanh (nếu có)"
+                  placeholder="ID file âm thanh chính"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group">
+                <label>Tải file âm thanh</label>
+                <input 
+                  type="file" 
+                  accept="audio/*"
+                  @change="handleAudioUpload"
                   class="form-input"
                 />
               </div>
@@ -94,102 +66,36 @@
               <label>Mô tả</label>
               <textarea 
                 v-model="formData.description" 
-                placeholder="Mô tả chi tiết về đề thi..."
+                placeholder="Mô tả chi tiết về đề thi Listening..."
                 rows="3"
                 class="form-textarea"
               ></textarea>
             </div>
           </div>
 
-          <!-- Reading Passages Section -->
-          <div class="form-section">
-            <div class="section-header">
-              <h4 class="section-title">
-                <i class="fa-solid fa-book-open"></i>
-                Đoạn văn Reading
-              </h4>
-              <button type="button" class="btn-add" @click="addPassage">
-                <i class="fa-solid fa-plus"></i>
-                Thêm đoạn văn
-              </button>
-            </div>
-
-            <div v-if="formData.passages.length === 0" class="empty-state">
-              <i class="fa-solid fa-book-open"></i>
-              <p>Chưa có đoạn văn nào. Click "Thêm đoạn văn" để bắt đầu.</p>
-            </div>
-
-            <div v-for="(passage, pIndex) in formData.passages" :key="'passage-' + pIndex" class="passage-item">
-              <div class="item-header">
-                <h5>
-                  <i class="fa-solid fa-file-text"></i>
-                  Đoạn văn {{ pIndex + 1 }}
-                  <span v-if="passage.id" class="id-badge">ID: {{ passage.id }}</span>
-                </h5>
-                <button type="button" class="btn-remove" @click="removePassage(pIndex)">
+          <!-- Audio Preview -->
+          <div v-if="audioFile || formData.audioFileId" class="form-section">
+            <h4 class="section-title">
+              <i class="fa-solid fa-volume-up"></i>
+              File âm thanh
+            </h4>
+            
+            <div class="audio-preview">
+              <audio v-if="audioFile" controls class="audio-player">
+                <source :src="audioPreviewUrl" type="audio/mpeg">
+                Trình duyệt không hỗ trợ phát âm thanh.
+              </audio>
+              
+              <div v-else-if="formData.audioFileId" class="audio-info">
+                <i class="fa-solid fa-file-audio"></i>
+                <span>File âm thanh ID: {{ formData.audioFileId }}</span>
+              </div>
+              
+              <div class="audio-actions">
+                <button type="button" class="btn secondary small" @click="clearAudio">
                   <i class="fa-solid fa-trash"></i>
+                  Xóa file
                 </button>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Tiêu đề đoạn văn</label>
-                  <input 
-                    type="text" 
-                    v-model="passage.title" 
-                    placeholder="Tiêu đề của đoạn văn..."
-                    class="form-input"
-                  />
-                </div>
-                <div class="form-group">
-                  <label>Thứ tự hiển thị</label>
-                  <input 
-                    type="number" 
-                    v-model="passage.displayOrder" 
-                    min="1"
-                    class="form-input"
-                  />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Nội dung đoạn văn *</label>
-                <textarea 
-                  v-model="passage.content" 
-                  placeholder="Nội dung đoạn văn..."
-                  rows="4"
-                  required
-                  class="form-textarea"
-                ></textarea>
-              </div>
-
-              <!-- Questions for this passage -->
-              <div class="questions-subsection">
-                <div class="subsection-header">
-                  <h6>
-                    <i class="fa-solid fa-question-circle"></i>
-                    Câu hỏi ({{ passage.questions.length }})
-                  </h6>
-                  <button type="button" class="btn-add small" @click="addQuestionToPassage(pIndex)">
-                    <i class="fa-solid fa-plus"></i>
-                    Thêm câu hỏi
-                  </button>
-                </div>
-
-                <div v-if="passage.questions.length === 0" class="empty-state small">
-                  <i class="fa-solid fa-question-circle"></i>
-                  <p>Chưa có câu hỏi nào</p>
-                </div>
-
-                <div v-for="(question, qIndex) in passage.questions" :key="'passage-question-' + qIndex" class="question-item">
-                  <QuestionForm 
-                    :question="question"
-                    :question-number="qIndex + 1"
-                    :show-id="true"
-                    @update="updatePassageQuestion(pIndex, qIndex, $event)"
-                    @remove="removePassageQuestion(pIndex, qIndex)"
-                  />
-                </div>
               </div>
             </div>
           </div>
@@ -198,8 +104,8 @@
           <div class="form-section">
             <div class="section-header">
               <h4 class="section-title">
-                <i class="fa-solid fa-headphones"></i>
-                Listening Parts
+                <i class="fa-solid fa-list-ol"></i>
+                Listening Parts ({{ formData.listeningParts.length }})
               </h4>
               <button type="button" class="btn-add" @click="addListeningPart">
                 <i class="fa-solid fa-plus"></i>
@@ -209,7 +115,11 @@
 
             <div v-if="formData.listeningParts.length === 0" class="empty-state">
               <i class="fa-solid fa-headphones"></i>
-              <p>Chưa có Listening Part nào. Click "Thêm Part" để bắt đầu.</p>
+              <p>Chưa có Listening Part nào. Hãy thêm Part đầu tiên.</p>
+              <button type="button" class="btn primary" @click="addListeningPart">
+                <i class="fa-solid fa-plus"></i>
+                Thêm Part đầu tiên
+              </button>
             </div>
 
             <div v-for="(part, partIndex) in formData.listeningParts" :key="'part-' + partIndex" class="listening-part-item">
@@ -217,7 +127,7 @@
                 <h5>
                   <i class="fa-solid fa-volume-up"></i>
                   Part {{ partIndex + 1 }}
-                  <span v-if="part.id" class="id-badge">ID: {{ part.id }}</span>
+                  <span class="part-info">({{ getTotalQuestionsInPart(part) }} câu hỏi)</span>
                 </h5>
                 <button type="button" class="btn-remove" @click="removeListeningPart(partIndex)">
                   <i class="fa-solid fa-trash"></i>
@@ -239,7 +149,7 @@
                   <input 
                     type="text" 
                     v-model="part.title" 
-                    placeholder="Tiêu đề của Part..."
+                    placeholder="VD: Social Context"
                     class="form-input"
                   />
                 </div>
@@ -268,7 +178,7 @@
                     <h6>
                       <i class="fa-solid fa-folder"></i>
                       Nhóm {{ groupIndex + 1 }}
-                      <span v-if="group.id" class="id-badge">ID: {{ group.id }}</span>
+                      <span class="group-info">({{ group.questions.length }} câu hỏi)</span>
                     </h6>
                     <button type="button" class="btn-remove small" @click="removeQuestionGroup(partIndex, groupIndex)">
                       <i class="fa-solid fa-trash"></i>
@@ -318,7 +228,6 @@
                       <QuestionForm 
                         :question="question"
                         :question-number="qIndex + 1"
-                        :show-id="true"
                         @update="updateGroupQuestion(partIndex, groupIndex, qIndex, $event)"
                         @remove="removeGroupQuestion(partIndex, groupIndex, qIndex)"
                       />
@@ -336,10 +245,10 @@
           <i class="fa-solid fa-times"></i>
           Hủy bỏ
         </button>
-        <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving || isLoading">
+        <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving">
           <i v-if="isSaving" class="fa-solid fa-spinner fa-spin"></i>
           <i v-else class="fa-solid fa-save"></i>
-          {{ isSaving ? 'Đang cập nhật...' : 'Cập nhật đề thi' }}
+          {{ isSaving ? 'Đang tạo...' : 'Tạo đề thi Listening' }}
         </button>
       </div>
     </div>
@@ -347,95 +256,60 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref } from 'vue'
 import QuestionForm from './QuestionForm.vue'
-import { TestDataHelpers, TestAdminAPI } from '@/services/TestAdminAPI.js'
+import { TestDataHelpers } from '@/services/TestAdminAPI.js'
 
 const props = defineProps({
-  testTypes: {
-    type: Array,
-    default: () => []
+  testType: {
+    type: String,
+    required: true
+  },
+  testTypeId: {
+    type: Number,
+    required: true
   },
   isSaving: {
     type: Boolean,
     default: false
-  },
-  testId: {
-    type: [Number, String],
-    required: true
   }
 })
 
 const emit = defineEmits(['close', 'save'])
 
-// State
-const isLoading = ref(false)
-const formData = ref(TestDataHelpers.createEmptyTest())
+// Form data
+const formData = ref({
+  title: '',
+  description: '',
+  durationMinutes: 40,
+  testTypeId: props.testTypeId,
+  audioFileId: null,
+  passages: [],
+  listeningParts: []
+})
 
-// Load test data
-const loadTestData = async () => {
-  if (!props.testId) return
+// Audio handling
+const audioFile = ref(null)
+const audioPreviewUrl = ref('')
+
+const handleAudioUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    audioFile.value = file
+    audioPreviewUrl.value = URL.createObjectURL(file)
+    // TODO: Upload file to server and get ID
+    console.log('Audio file selected:', file.name)
+  }
+}
+
+const clearAudio = () => {
+  audioFile.value = null
+  audioPreviewUrl.value = ''
+  formData.value.audioFileId = null
   
-  isLoading.value = true
-  try {
-    const testData = await TestAdminAPI.getTestById(props.testId)
-    formData.value = { ...testData }
-  } catch (error) {
-    console.error('Error loading test data:', error)
-    alert('Không thể tải dữ liệu đề thi: ' + error.message)
-    emit('close')
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Utility function
-const formatDate = (date) => {
-  if (!date) return 'N/A'
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(new Date(date))
-}
-
-// Passage management
-const addPassage = () => {
-  const newPassage = TestDataHelpers.createEmptyPassage(formData.value.passages.length + 1)
-  formData.value.passages.push(newPassage)
-}
-
-const removePassage = (index) => {
-  if (confirm('Bạn có chắc chắn muốn xóa đoạn văn này không?')) {
-    formData.value.passages.splice(index, 1)
-    // Update display orders
-    formData.value.passages.forEach((passage, i) => {
-      passage.displayOrder = i + 1
-    })
-  }
-}
-
-const addQuestionToPassage = (passageIndex) => {
-  const passage = formData.value.passages[passageIndex]
-  const questionNumber = passage.questions.length + 1
-  const newQuestion = TestDataHelpers.createEmptyQuestion(questionNumber)
-  passage.questions.push(newQuestion)
-}
-
-const removePassageQuestion = (passageIndex, questionIndex) => {
-  if (confirm('Bạn có chắc chắn muốn xóa câu hỏi này không?')) {
-    formData.value.passages[passageIndex].questions.splice(questionIndex, 1)
-    // Update question numbers
-    formData.value.passages[passageIndex].questions.forEach((question, i) => {
-      question.questionNumber = i + 1
-    })
-  }
-}
-
-const updatePassageQuestion = (passageIndex, questionIndex, questionData) => {
-  formData.value.passages[passageIndex].questions[questionIndex] = questionData
+  // Clear the file input
+  const fileInput = document.querySelector('input[type="file"]')
+  if (fileInput) fileInput.value = ''
 }
 
 // Listening part management
@@ -491,22 +365,49 @@ const updateGroupQuestion = (partIndex, groupIndex, questionIndex, questionData)
   formData.value.listeningParts[partIndex].questionGroups[groupIndex].questions[questionIndex] = questionData
 }
 
-const handleSubmit = () => {
-  emit('save', formData.value)
+// Utility functions
+const getTotalQuestionsInPart = (part) => {
+  return part.questionGroups.reduce((total, group) => total + group.questions.length, 0)
 }
 
-// Watch for testId changes
-watch(() => props.testId, (newTestId) => {
-  if (newTestId) {
-    loadTestData()
+const handleSubmit = () => {
+  // Basic validation
+  if (!formData.value.title.trim()) {
+    alert('Vui lòng nhập tên đề thi')
+    return
   }
-}, { immediate: true })
 
-onMounted(() => {
-  if (props.testId) {
-    loadTestData()
+  if (formData.value.listeningParts.length === 0) {
+    alert('Vui lòng thêm ít nhất 1 Listening Part')
+    return
   }
-})
+
+  // Check if all parts have question groups and questions
+  for (let i = 0; i < formData.value.listeningParts.length; i++) {
+    const part = formData.value.listeningParts[i]
+    if (part.questionGroups.length === 0) {
+      alert(`Vui lòng thêm ít nhất 1 nhóm câu hỏi cho Part ${i + 1}`)
+      return
+    }
+    
+    for (let j = 0; j < part.questionGroups.length; j++) {
+      const group = part.questionGroups[j]
+      if (group.questions.length === 0) {
+        alert(`Vui lòng thêm ít nhất 1 câu hỏi cho Nhóm ${j + 1} của Part ${i + 1}`)
+        return
+      }
+    }
+  }
+
+  // TODO: Handle audio file upload if needed
+  if (audioFile.value) {
+    console.log('Need to upload audio file:', audioFile.value.name)
+    // Simulate upload - in real implementation, upload file first and get ID
+    // formData.value.audioFileId = uploadedFileId
+  }
+
+  emit('save', formData.value)
+}
 </script>
 
 <style src="@/assets/modal.css"></style>
@@ -515,52 +416,22 @@ onMounted(() => {
 <style src="./TestManagement.css" scoped></style>
 <style scoped>
 /* Component-specific styles */
-.loading-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-}
-
-.loading-spinner {
-  text-align: center;
-  color: #F6871F;
-}
-
-.loading-spinner i {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.loading-spinner p {
-  margin: 0;
-  font-weight: 500;
-}
-
-.id-badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: #6b7280;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: normal;
-  margin-left: 0.5rem;
-}
-
-.form-input.disabled {
-  background: #f3f4f6;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-.passage-item,
 .listening-part-item {
   background: white;
   border-radius: 0.5rem;
   padding: 1.5rem;
   margin-bottom: 1rem;
   border: 1px solid #e2e8f0;
+}
+
+.part-info,
+.group-info {
+  background: #e2e8f0;
+  color: #6b7280;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: normal;
 }
 
 .question-group-item {
@@ -590,5 +461,41 @@ onMounted(() => {
 .questions-subsection,
 .question-groups-subsection {
   margin-top: 1rem;
+}
+
+.audio-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.audio-player {
+  width: 100%;
+  height: 40px;
+}
+
+.audio-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4a5568;
+}
+
+.audio-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .group-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
 }
 </style>
