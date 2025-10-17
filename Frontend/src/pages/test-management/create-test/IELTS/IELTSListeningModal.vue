@@ -1,13 +1,12 @@
 <template>
-  <div class="modal-overlay" @click="$emit('close')">
+  <div class="modal-overlay" @click="!isPageMode && $emit('close')">
     <div class="modal-content" @click.stop>
       <div class="modal-header info">
         <h3>
-          <i class="fa-solid fa-headphones"></i>
           Tạo đề thi {{ testType }} - Listening
         </h3>
-        <button class="close-btn" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
+        <button v-if="!isPageMode" class="close-btn" @click="$emit('close')">
+          <i class="fa-solid fa-circle-xmark"></i>
         </button>
       </div>
       
@@ -114,12 +113,7 @@
             </div>
 
             <div v-if="formData.listeningParts.length === 0" class="empty-state">
-              <i class="fa-solid fa-headphones"></i>
               <p>Chưa có Listening Part nào. Hãy thêm Part đầu tiên.</p>
-              <button type="button" class="btn primary" @click="addListeningPart">
-                <i class="fa-solid fa-plus"></i>
-                Thêm Part đầu tiên
-              </button>
             </div>
 
             <div v-for="(part, partIndex) in formData.listeningParts" :key="'part-' + partIndex" class="listening-part-item">
@@ -232,6 +226,14 @@
                         @remove="removeGroupQuestion(partIndex, groupIndex, qIndex)"
                       />
                     </div>
+
+                    <!-- Bottom Add Question Button -->
+                    <div v-if="group.questions.length > 0" class="bottom-add-button">
+                      <button type="button" class="btn-add" @click="addQuestionToGroup(partIndex, groupIndex)">
+                        <i class="fa-solid fa-plus"></i>
+                        Thêm câu hỏi
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -257,7 +259,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import QuestionForm from './QuestionForm.vue'
+import QuestionForm from './QuestionFormNew.vue'
 import { TestDataHelpers } from '@/services/TestAdminAPI.js'
 
 const props = defineProps({
@@ -270,6 +272,10 @@ const props = defineProps({
     required: true
   },
   isSaving: {
+    type: Boolean,
+    default: false
+  },
+  isPageMode: {
     type: Boolean,
     default: false
   }
@@ -411,9 +417,9 @@ const handleSubmit = () => {
 </script>
 
 <style src="@/assets/modal.css"></style>
-<style src="@/assets/form.css"></style>  
+<style src="@/assets/form.css"></style>
 <style src="@/assets/buttons.css"></style>
-<style src="./TestManagement.css" scoped></style>
+<style src="../../TestManagement.css" scoped></style>
 <style scoped>
 /* Component-specific styles */
 .listening-part-item {
@@ -488,6 +494,20 @@ const handleSubmit = () => {
 .audio-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+/* Bottom Add Button */
+.bottom-add-button {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px dashed #e2e8f0;
+  display: flex;
+  justify-content: center;
+}
+
+.bottom-add-button .btn-add {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
 }
 
 /* Responsive */

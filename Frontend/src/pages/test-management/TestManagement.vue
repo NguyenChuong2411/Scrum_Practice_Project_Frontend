@@ -32,7 +32,7 @@
           </div>
           
           <div class="action-buttons">
-            <button class="action-btn primary" @click="openCreateModal">
+            <button class="action-btn primary" @click="navigateToCreateTest">
               <i class="fa-solid fa-plus"></i>
               Tạo đề thi mới
             </button>
@@ -122,63 +122,7 @@
       </div>
     </section>
 
-    <!-- Test Type Selection Modal -->
-    <TestTypeSelectionModal
-      v-if="showTestTypeSelection"
-      :test-types="testTypes"
-      @close="showTestTypeSelection = false"
-      @select="handleTestTypeSelection"
-    />
-
-    <!-- IELTS Reading Modal -->
-    <IELTSReadingModal
-      v-if="showIELTSReadingModal"
-      :test-type="selectedTestTypeName"
-      :test-type-id="selectedTestTypeId"
-      :is-saving="isLoading"
-      @close="closeAllModals"
-      @save="saveTest"
-    />
-
-    <!-- IELTS Listening Modal -->
-    <IELTSListeningModal
-      v-if="showIELTSListeningModal"
-      :test-type="selectedTestTypeName"
-      :test-type-id="selectedTestTypeId"
-      :is-saving="isLoading"
-      @close="closeAllModals"
-      @save="saveTest"
-    />
-
-    <!-- IELTS Writing Modal -->
-    <IELTSWritingModal
-      v-if="showIELTSWritingModal"
-      :test-type="selectedTestTypeName"
-      :test-type-id="selectedTestTypeId"
-      :is-saving="isLoading"
-      @close="closeAllModals"
-      @save="saveTest"
-    />
-
-    <!-- TOEIC Modal -->
-    <TOEICModal
-      v-if="showTOEICModal"
-      :test-type-id="selectedTestTypeId"
-      :is-saving="isLoading"
-      @close="closeAllModals"
-      @save="saveTest"
-    />
-
-    <!-- TOEIC SW Modal -->
-    <TOEICSWModal
-      v-if="showTOEICSWModal"
-      :test-type-id="selectedTestTypeId"
-      :is-saving="isLoading"
-      @close="closeAllModals"
-      @save="saveTest"
-    />
-
-    <!-- Update Test Modal (keeping old modal for editing) -->
+    <!-- Update Test Modal (for editing) -->
     <UpdateTestModal
       v-if="showEditModal"
       :test-types="testTypes"
@@ -186,6 +130,16 @@
       :is-saving="isLoading"
       @close="closeModal"
       @save="saveTest"
+    />
+
+    <!-- View Test Modal (read-only) -->
+    <UpdateTestModal
+      v-if="showViewModal"
+      :test-types="testTypes"
+      :test-id="viewingTestId"
+      :is-saving="false"
+      :view-only="true"
+      @close="closeViewModal"
     />
 
     <!-- Delete Confirmation Modal -->
@@ -214,15 +168,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Pagination from '@/components/Pagination.vue'
-import TestTypeSelectionModal from './TestTypeSelectionModal.vue'
-import IELTSReadingModal from './IELTSReadingModal.vue'
-import IELTSListeningModal from './IELTSListeningModal.vue'
-import IELTSWritingModal from './IELTSWritingModal.vue'
-import TOEICModal from './TOEICModal.vue'
-import TOEICSWModal from './TOEICSWModal.vue'
-import UpdateTestModal from './UpdateTestModal.vue'
+import UpdateTestModal from './create-test/UpdateTestModal.vue'
 import { TestAdminAPI, TestDataHelpers } from '@/services/TestAdminAPI.js'
+
+const router = useRouter()
 
 // Reactive data
 const searchQuery = ref('')
@@ -231,19 +182,13 @@ const currentPage = ref(1)
 const itemsPerPage = 10
 const isLoading = ref(false)
 
-// Modal states
-const showTestTypeSelection = ref(false)
-const showIELTSReadingModal = ref(false)
-const showIELTSListeningModal = ref(false)
-const showIELTSWritingModal = ref(false)
-const showTOEICModal = ref(false)
-const showTOEICSWModal = ref(false)
+// Modal states - Chỉ giữ lại modal cho edit và view
 const showEditModal = ref(false)
+const showViewModal = ref(false)
 const showDeleteModal = ref(false)
 const testToDelete = ref(null)
 const editingTestId = ref(null)
-const selectedTestTypeId = ref(null)
-const selectedTestTypeName = ref('')
+const viewingTestId = ref(null)
 
 // Thay thế sample data bằng dữ liệu thực từ API
 const allTests = ref([])
@@ -321,9 +266,9 @@ const loadAllTests = async () => {
 }
 
 // CRUD operations
-const viewTest = (test) => {
-  console.log('Viewing test:', test)
-  // TODO: Navigate to test detail page or open view modal
+const viewTest = async (test) => {
+  viewingTestId.value = test.id
+  showViewModal.value = true
 }
 
 const editTest = async (test) => {
@@ -331,31 +276,8 @@ const editTest = async (test) => {
   showEditModal.value = true
 }
 
-const openCreateModal = () => {
-  showTestTypeSelection.value = true
-}
-
-const handleTestTypeSelection = (selection) => {
-  selectedTestTypeId.value = selection.testType.id
-  selectedTestTypeName.value = selection.testType.name
-  
-  // Close test type selection modal
-  showTestTypeSelection.value = false
-  
-  // Open appropriate modal based on selection
-  if (selection.testType.name === 'IELTS Academic' || selection.testType.name === 'IELTS General') {
-    if (selection.skill && selection.skill.key === 'reading') {
-      showIELTSReadingModal.value = true
-    } else if (selection.skill && selection.skill.key === 'listening') {
-      showIELTSListeningModal.value = true
-    } else if (selection.skill && selection.skill.key === 'writing') {
-      showIELTSWritingModal.value = true
-    }
-  } else if (selection.testType.name === 'TOEIC') {
-    showTOEICModal.value = true
-  } else if (selection.testType.name === 'TOEIC SW') {
-    showTOEICSWModal.value = true
-  }
+const navigateToCreateTest = () => {
+  router.push({ name: 'create-test' })
 }
 
 const confirmDelete = (test) => {
@@ -396,19 +318,9 @@ const saveTest = async (testData) => {
       return
     }
 
-    // Check if this is a create operation (any of the specialized modals are open)
-    const isCreating = showIELTSReadingModal.value || showIELTSListeningModal.value || 
-                      showIELTSWritingModal.value || showTOEICModal.value || showTOEICSWModal.value
-    
-    if (isCreating) {
-      // Create new test
-      const newTestId = await TestAdminAPI.createTest(testData)
-      console.log('New test created with ID:', newTestId)
-      alert('Tạo đề thi mới thành công!')
-      
-      // Reload the test list
-      await loadAllTests()
-    } else if (showEditModal.value) {
+    // Only update operation is supported in TestManagement page
+    // Create operation is handled in CreateTestPage
+    if (showEditModal.value) {
       // Update existing test
       await TestAdminAPI.updateTest(testData.id, testData)
       console.log('Test updated successfully')
@@ -416,12 +328,6 @@ const saveTest = async (testData) => {
       
       // Reload the test list
       await loadAllTests()
-    }
-    
-    // Close appropriate modal
-    if (isCreating) {
-      closeAllModals()
-    } else {
       closeModal()
     }
   } catch (error) {
@@ -437,17 +343,9 @@ const closeModal = () => {
   editingTestId.value = null
 }
 
-const closeAllModals = () => {
-  showTestTypeSelection.value = false
-  showIELTSReadingModal.value = false
-  showIELTSListeningModal.value = false
-  showIELTSWritingModal.value = false
-  showTOEICModal.value = false
-  showTOEICSWModal.value = false
-  showEditModal.value = false
-  editingTestId.value = null
-  selectedTestTypeId.value = null
-  selectedTestTypeName.value = ''
+const closeViewModal = () => {
+  showViewModal.value = false
+  viewingTestId.value = null
 }
 
 const handlePageChange = (page) => {

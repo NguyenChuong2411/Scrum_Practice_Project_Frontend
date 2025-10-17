@@ -1,13 +1,12 @@
 <template>
-  <div class="modal-overlay" @click="$emit('close')">
+  <div class="modal-overlay" @click="!isPageMode && $emit('close')">
     <div class="modal-content" @click.stop>
-      <div class="modal-header warning">
+      <div class="modal-header info">
         <h3>
-          <i class="fa-solid fa-pen"></i>
           Tạo đề thi {{ testType }} - Writing
         </h3>
-        <button class="close-btn" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
+        <button v-if="!isPageMode" class="close-btn" @click="$emit('close')">
+          <i class="fa-solid fa-circle-xmark"></i>
         </button>
       </div>
       
@@ -66,12 +65,7 @@
             </div>
 
             <div v-if="writingTasks.length === 0" class="empty-state">
-              <i class="fa-solid fa-pen"></i>
               <p>Chưa có Writing Task nào. Hãy thêm Task đầu tiên.</p>
-              <button type="button" class="btn primary" @click="addWritingTask">
-                <i class="fa-solid fa-plus"></i>
-                Thêm Task đầu tiên
-              </button>
             </div>
 
             <div v-for="(task, taskIndex) in writingTasks" :key="'task-' + taskIndex" class="writing-task-item">
@@ -265,6 +259,10 @@ const props = defineProps({
   isSaving: {
     type: Boolean,
     default: false
+  },
+  isPageMode: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -376,9 +374,9 @@ const handleSubmit = () => {
 </script>
 
 <style src="@/assets/modal.css"></style>
-<style src="@/assets/form.css"></style>  
+<style src="@/assets/form.css"></style>
 <style src="@/assets/buttons.css"></style>
-<style src="./TestManagement.css" scoped></style>
+<style src="../../TestManagement.css" scoped></style>
 <style scoped>
 /* Component-specific styles */
 .writing-task-item {

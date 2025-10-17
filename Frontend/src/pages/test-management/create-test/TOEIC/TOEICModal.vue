@@ -1,12 +1,11 @@
 <template>
-  <div class="modal-overlay" @click="$emit('close')">
+  <div class="modal-overlay" @click="!isPageMode && $emit('close')">
     <div class="modal-content large" @click.stop>
       <div class="modal-header primary">
         <h3>
-          <i class="fa-solid fa-briefcase"></i>
           Tạo đề thi TOEIC - Listening & Reading
         </h3>
-        <button class="close-btn" @click="$emit('close')">
+        <button v-if="!isPageMode" class="close-btn" @click="$emit('close')">
           <i class="fa-solid fa-times"></i>
         </button>
       </div>
@@ -108,7 +107,6 @@
               :class="{ active: activeTab === 'listening' }"
               @click="activeTab = 'listening'"
             >
-              <i class="fa-solid fa-headphones"></i>
               Listening ({{ getTotalListeningQuestions() }} câu hỏi)
             </button>
             <button 
@@ -117,7 +115,6 @@
               :class="{ active: activeTab === 'reading' }"
               @click="activeTab = 'reading'"
             >
-              <i class="fa-solid fa-book-open"></i>
               Reading ({{ getTotalReadingQuestions() }} câu hỏi)
             </button>
           </div>
@@ -126,7 +123,6 @@
           <div v-if="activeTab === 'listening'" class="form-section">
             <div class="section-header">
               <h4 class="section-title">
-                <i class="fa-solid fa-headphones"></i>
                 TOEIC Listening (Parts 1-4)
               </h4>
               <button type="button" class="btn-add" @click="addListeningPart">
@@ -136,12 +132,7 @@
             </div>
 
             <div v-if="formData.listeningParts.length === 0" class="empty-state">
-              <i class="fa-solid fa-headphones"></i>
               <p>Chưa có Listening Part nào. Hãy thêm Part đầu tiên.</p>
-              <button type="button" class="btn primary" @click="addListeningPart">
-                <i class="fa-solid fa-plus"></i>
-                Thêm Listening Part
-              </button>
             </div>
 
             <div v-for="(part, partIndex) in formData.listeningParts" :key="'listening-part-' + partIndex" class="listening-part-item">
@@ -233,6 +224,14 @@
                         @remove="removeGroupQuestion(partIndex, groupIndex, qIndex, 'listening')"
                       />
                     </div>
+
+                    <!-- Bottom Add Question Button -->
+                    <div v-if="group.questions.length > 0" class="bottom-add-button">
+                      <button type="button" class="btn-add" @click="addQuestionToGroup(partIndex, groupIndex, 'listening')">
+                        <i class="fa-solid fa-plus"></i>
+                        Thêm câu hỏi
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -243,7 +242,6 @@
           <div v-if="activeTab === 'reading'" class="form-section">
             <div class="section-header">
               <h4 class="section-title">
-                <i class="fa-solid fa-book-open"></i>
                 TOEIC Reading (Parts 5-7)
               </h4>
               <button type="button" class="btn-add" @click="addPassage">
@@ -253,12 +251,7 @@
             </div>
 
             <div v-if="formData.passages.length === 0" class="empty-state">
-              <i class="fa-solid fa-book-open"></i>
               <p>Chưa có Reading Passage nào. Hãy thêm Passage đầu tiên.</p>
-              <button type="button" class="btn primary" @click="addPassage">
-                <i class="fa-solid fa-plus"></i>
-                Thêm Reading Passage
-              </button>
             </div>
 
             <div v-for="(passage, pIndex) in formData.passages" :key="'reading-passage-' + pIndex" class="passage-item">
@@ -328,6 +321,14 @@
                     @remove="removePassageQuestion(pIndex, qIndex)"
                   />
                 </div>
+
+                <!-- Bottom Add Question Button -->
+                <div v-if="passage.questions.length > 0" class="bottom-add-button">
+                  <button type="button" class="btn-add" @click="addQuestionToPassage(pIndex)">
+                    <i class="fa-solid fa-plus"></i>
+                    Thêm câu hỏi
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -351,7 +352,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import QuestionForm from './QuestionForm.vue'
+import QuestionForm from './create-test/QuestionFormNew.vue'
 import { TestDataHelpers } from '@/services/TestAdminAPI.js'
 
 const props = defineProps({
@@ -360,6 +361,10 @@ const props = defineProps({
     required: true
   },
   isSaving: {
+    type: Boolean,
+    default: false
+  },
+  isPageMode: {
     type: Boolean,
     default: false
   }
@@ -588,9 +593,9 @@ const handleSubmit = () => {
 </script>
 
 <style src="@/assets/modal.css"></style>
-<style src="@/assets/form.css"></style>  
+<style src="@/assets/form.css"></style>
 <style src="@/assets/buttons.css"></style>
-<style src="./TestManagement.css" scoped></style>
+<style src="../../TestManagement.css" scoped></style>
 <style scoped>
 /* Component-specific styles */
 .modal-content.large {
@@ -699,6 +704,20 @@ const handleSubmit = () => {
   font-size: 0.75rem;
   color: #6b7280;
   margin-top: 0.5rem;
+}
+
+/* Bottom Add Button */
+.bottom-add-button {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px dashed #e2e8f0;
+  display: flex;
+  justify-content: center;
+}
+
+.bottom-add-button .btn-add {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
 }
 
 /* Responsive */

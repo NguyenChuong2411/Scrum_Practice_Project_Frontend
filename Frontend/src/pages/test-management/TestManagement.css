@@ -565,7 +565,6 @@
 .test-type-card.active,
 .skill-card.active {
   border-color: #F6871F;
-  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
   box-shadow: 0 4px 12px rgba(246, 135, 31, 0.25);
 }
 

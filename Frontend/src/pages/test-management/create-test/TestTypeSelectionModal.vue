@@ -1,12 +1,12 @@
 <template>
-  <div class="modal-overlay" @click="$emit('close')">
+  <div class="modal-overlay" @click="!isPageMode && $emit('close')">
     <div class="modal-content" @click.stop>
       <div class="modal-header primary">
         <h3>
           <i class="fa-solid fa-plus"></i>
           Chọn loại đề thi muốn tạo
         </h3>
-        <button class="close-btn" @click="$emit('close')">
+        <button v-if="!isPageMode" class="close-btn" @click="$emit('close')">
           <i class="fa-solid fa-circle-xmark"></i>
         </button>
       </div>
@@ -71,7 +71,7 @@
         >
           Quay lại
         </button>
-        <button type="button" class="btn secondary" @click="$emit('close')">
+        <button v-if="!isPageMode" type="button" class="btn secondary" @click="$emit('close')">
           Hủy bỏ
         </button>
         <button 
@@ -94,6 +94,10 @@ const props = defineProps({
   testTypes: {
     type: Array,
     default: () => []
+  },
+  isPageMode: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -214,4 +218,4 @@ const getTestTypeDescription = (typeName) => {
 <style src="@/assets/modal.css"></style>
 <style src="@/assets/form.css"></style>  
 <style src="@/assets/buttons.css"></style>
-<style src="./TestManagement.css" scoped></style>
+<style src="../TestManagement.css" scoped></style>

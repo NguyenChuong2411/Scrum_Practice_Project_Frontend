@@ -1,13 +1,12 @@
 <template>
-  <div class="modal-overlay" @click="$emit('close')">
+  <div class="modal-overlay" @click="!isPageMode && $emit('close')">
     <div class="modal-content" @click.stop>
-      <div class="modal-header">
+      <div class="modal-header info">
         <h3>
-          <i class="fa-solid fa-book-open"></i>
           Tạo đề thi {{ testType }} - Reading
         </h3>
-        <button class="close-btn" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
+        <button v-if="!isPageMode" class="close-btn" @click="$emit('close')">
+          <i class="fa-solid fa-circle-xmark"></i>
         </button>
       </div>
       
@@ -66,12 +65,7 @@
             </div>
 
             <div v-if="formData.passages.length === 0" class="empty-state">
-              <i class="fa-solid fa-book-open"></i>
               <p>Chưa có đoạn văn nào. Hãy thêm đoạn văn đầu tiên.</p>
-              <button type="button" class="btn primary" @click="addPassage">
-                <i class="fa-solid fa-plus"></i>
-                Thêm đoạn văn đầu tiên
-              </button>
             </div>
 
             <div v-for="(passage, pIndex) in formData.passages" :key="'passage-' + pIndex" class="passage-item">
@@ -82,7 +76,7 @@
                   <span class="passage-info">({{ passage.questions.length }} câu hỏi)</span>
                 </h5>
                 <button type="button" class="btn-remove" @click="removePassage(pIndex)">
-                  <i class="fa-solid fa-trash"></i>
+                  <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
 
@@ -125,7 +119,6 @@
               <div class="questions-subsection">
                 <div class="subsection-header">
                   <h6>
-                    <i class="fa-solid fa-question-circle"></i>
                     Câu hỏi cho Passage {{ pIndex + 1 }}
                   </h6>
                   <button type="button" class="btn-add small" @click="addQuestionToPassage(pIndex)">
@@ -147,6 +140,14 @@
                     @remove="removePassageQuestion(pIndex, qIndex)"
                   />
                 </div>
+
+                <!-- Bottom Add Question Button -->
+                <div v-if="passage.questions.length > 0" class="bottom-add-button">
+                  <button type="button" class="btn-add" @click="addQuestionToPassage(pIndex)">
+                    <i class="fa-solid fa-plus"></i>
+                    Thêm câu hỏi
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -155,12 +156,9 @@
 
       <div class="modal-footer">
         <button type="button" class="btn secondary" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
           Hủy bỏ
         </button>
         <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving">
-          <i v-if="isSaving" class="fa-solid fa-spinner fa-spin"></i>
-          <i v-else class="fa-solid fa-save"></i>
           {{ isSaving ? 'Đang tạo...' : 'Tạo đề thi Reading' }}
         </button>
       </div>
@@ -170,7 +168,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import QuestionForm from './QuestionForm.vue'
+import QuestionForm from './QuestionFormNew.vue'
 import { TestDataHelpers } from '@/services/TestAdminAPI.js'
 
 const props = defineProps({
@@ -183,6 +181,10 @@ const props = defineProps({
     required: true
   },
   isSaving: {
+    type: Boolean,
+    default: false
+  },
+  isPageMode: {
     type: Boolean,
     default: false
   }
@@ -276,4 +278,27 @@ const handleSubmit = () => {
 <style src="@/assets/modal.css"></style>
 <style src="@/assets/form.css"></style>  
 <style src="@/assets/buttons.css"></style>
-<style src="./TestManagement.css" scoped></style>
+<style src="../../TestManagement.css" scoped></style>
+<style scoped>
+/* Bottom Add Button */
+.bottom-add-button {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px dashed #e2e8f0;
+  display: flex;
+  justify-content: center;
+}
+
+.bottom-add-button .btn-add {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+}
+
+/* Word Count */
+.word-count {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+</style>

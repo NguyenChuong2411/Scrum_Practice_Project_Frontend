@@ -1,12 +1,12 @@
 <template>
-  <div class="modal-overlay" @click="$emit('close')">
+  <div class="modal-overlay" @click="!isPageMode && $emit('close')">
     <div class="modal-content" @click.stop>
       <div class="modal-header purple">
         <h3>
           <i class="fa-solid fa-microphone"></i>
           Tạo đề thi TOEIC Speaking & Writing
         </h3>
-        <button class="close-btn" @click="$emit('close')">
+        <button v-if="!isPageMode" class="close-btn" @click="$emit('close')">
           <i class="fa-solid fa-times"></i>
         </button>
       </div>
@@ -55,12 +55,11 @@
           <!-- Speaking Section -->
           <div class="form-section">
             <h4 class="section-title">
-              <i class="fa-solid fa-microphone"></i>
               TOEIC Speaking Template
             </h4>
             
             <div class="form-group">
-              <label>Hướng dẫn chung cho phần Speaking *</label>
+              <label>Hướng dẫn chung cho phần Speaking</label>
               <textarea 
                 v-model="formData.speakingInstructions" 
                 required
@@ -75,7 +74,7 @@
             </div>
 
             <div class="form-group">
-              <label>Template câu hỏi Speaking *</label>
+              <label>Template câu hỏi Speaking</label>
               <textarea 
                 v-model="formData.speakingTemplate" 
                 required
@@ -206,12 +205,11 @@ Question 11: Express an opinion
           <!-- Writing Section -->
           <div class="form-section">
             <h4 class="section-title">
-              <i class="fa-solid fa-pen"></i>
               TOEIC Writing Template
             </h4>
             
             <div class="form-group">
-              <label>Hướng dẫn chung cho phần Writing *</label>
+              <label>Hướng dẫn chung cho phần Writing</label>
               <textarea 
                 v-model="formData.writingInstructions" 
                 required
@@ -226,7 +224,7 @@ Question 11: Express an opinion
             </div>
 
             <div class="form-group">
-              <label>Template câu hỏi Writing *</label>
+              <label>Template câu hỏi Writing</label>
               <textarea 
                 v-model="formData.writingTemplate" 
                 required
@@ -404,6 +402,10 @@ const props = defineProps({
   isSaving: {
     type: Boolean,
     default: false
+  },
+  isPageMode: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -505,7 +507,7 @@ const handleSubmit = () => {
 <style src="@/assets/modal.css"></style>
 <style src="@/assets/form.css"></style>  
 <style src="@/assets/buttons.css"></style>
-<style src="./TestManagement.css" scoped></style>
+<style src="../../TestManagement.css" scoped></style>
 <style scoped>
 /* Component-specific styles */
 .subsection-title {
