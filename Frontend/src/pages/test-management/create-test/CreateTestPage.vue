@@ -1,14 +1,10 @@
 <template>
   <div class="create-test-page">
     <!-- Header Section -->
-    <section class="page-header">
-      <div class="header-container">
-        <button class="back-button" @click="goBack">
-          Quay lại
+    <section class="page-header-create">
+        <button class="btn primary m-2" @click="goBack">
+          <i class="fa-solid fa-circle-left large-icon "></i>
         </button>
-        <h1 class="page-title">TẠO ĐỀ THI MỚI</h1>
-        <p class="page-subtitle">{{ getPageSubtitle() }}</p>
-      </div>
     </section>
 
     <!-- Test Type Selection (Step 1) -->
@@ -189,60 +185,27 @@ const saveTest = async (testData) => {
 <style src="@/assets/buttons.css"></style>
 <style src="../TestManagement.css" scoped></style>
 <style scoped>
+.large-icon {
+  font-size: large;
+}
+
 .create-test-page {
   min-height: 100vh;
   background: #f8f9fa;
 }
 
-.page-header {
-  background: linear-gradient(135deg, #F6871F 0%, #f39c12 100%);
-  color: white;
-  padding: 2rem 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.page-header-create {
+  text-align: center;
+  margin-top: 1rem;
 }
 
-.header-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  position: relative;
-}
-
-.back-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
-  margin-bottom: 1rem;
-}
-
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: translateX(-2px);
-}
-
-.page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-}
-
-.page-subtitle {
-  font-size: 1.1rem;
-  margin: 0;
-  opacity: 0.95;
+.m-2{
+  margin-left: 2rem;
 }
 
 .selection-section,
 .form-section {
-  padding: 2rem 0;
+  padding: 0;
 }
 
 .content-container {
@@ -292,14 +255,6 @@ const saveTest = async (testData) => {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .page-title {
-    font-size: 1.5rem;
-  }
-  
-  .page-subtitle {
-    font-size: 0.95rem;
-  }
-  
   .content-container {
     padding: 0 1rem;
   }

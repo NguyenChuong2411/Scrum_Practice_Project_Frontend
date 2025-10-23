@@ -215,28 +215,19 @@ export const TestDataHelpers = {
     return question.correctAnswers
   },
 
-  // Format correctAnswers cho backend (stringify nếu chưa phải string)
   formatCorrectAnswersForBackend(question) {
-    if (!question.correctAnswers) return ''
-    
-    // Nếu đã là string, return as is
+    if (!question.correctAnswers) return '{}'
     if (typeof question.correctAnswers === 'string') {
-      // Check if it's already JSON formatted
       try {
         JSON.parse(question.correctAnswers)
-        return question.correctAnswers // Already JSON string
+        return question.correctAnswers
       } catch {
-        // Plain string - wrap in JSON
         return JSON.stringify({ answer: question.correctAnswers })
       }
-    }
-    
-    // If it's object (multiple-choice label or table dict), stringify it
+    }    
     if (typeof question.correctAnswers === 'object') {
       return JSON.stringify(question.correctAnswers)
     }
-    
-    // Otherwise wrap in JSON
     return JSON.stringify({ answer: String(question.correctAnswers) })
   },
 

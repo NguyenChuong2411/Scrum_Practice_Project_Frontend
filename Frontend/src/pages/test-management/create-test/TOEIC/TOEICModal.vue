@@ -352,7 +352,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import QuestionForm from './create-test/QuestionFormNew.vue'
+import QuestionForm from '../QuestionFormNew.vue'
 import { TestDataHelpers } from '@/services/TestAdminAPI.js'
 
 const props = defineProps({
