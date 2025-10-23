@@ -2,7 +2,7 @@
   <div v-if="isOpen" class="test-detail-modal-overlay" @click="handleOverlayClick">
     <div class="test-detail-modal" @click.stop>
       <!-- Modal Header -->
-      <div class="modal-header">
+      <div class="test-detail-header">
         <div class="header-content">
           <h2 class="test-title">{{ testData.title }}</h2>
           <button class="close-btn" @click="closeModal">
@@ -269,11 +269,11 @@ const joinDiscussion = () => {
 }
 
 /* Modal Header */
-.modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: white !important;
-  padding: 2rem !important;
-  border-radius: 1rem 1rem 0 0 !important;
+.test-detail-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 1rem 1rem 0 0;
 }
 
 .header-content {
@@ -550,7 +550,7 @@ const joinDiscussion = () => {
     border-radius: 1rem 1rem 0 0;
   }
   
-  .modal-header {
+  .test-detail-header {
     padding: 1.5rem;
     border-radius: 1rem 1rem 0 0;
   }

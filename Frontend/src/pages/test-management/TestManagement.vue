@@ -152,12 +152,11 @@
           <p>Bạn có chắc chắn muốn xóa đề thi "<strong>{{ testToDelete?.title }}</strong>"?</p>
           <p class="warning">Hành động này không thể hoàn tác!</p>
         </div>
-        <div class="modal-actions">
+        <div class="modal-delete">
           <button class="btn secondary" @click="showDeleteModal = false">
             Hủy bỏ
           </button>
           <button class="btn danger" @click="deleteTest" :disabled="isLoading">
-            <i v-if="isLoading" class="fa-solid fa-spinner fa-spin"></i>
             {{ isLoading ? 'Đang xóa...' : 'Xóa đề thi' }}
           </button>
         </div>

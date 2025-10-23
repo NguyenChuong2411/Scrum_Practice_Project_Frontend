@@ -258,24 +258,29 @@ const props = defineProps({
 
 const emit = defineEmits(['update', 'remove'])
 
-// Local copy of question data - ensure all fields exist
+// Helper function to parse correctAnswers
+const parseCorrectAnswers = (correctAnswers) => {
+  if (!correctAnswers) return ''
+  if (typeof correctAnswers === 'string') return correctAnswers
+  if (typeof correctAnswers === 'object' && 'answer' in correctAnswers) {
+    return correctAnswers.answer || ''
+  }
+  return String(correctAnswers)
+}
+
 const localQuestion = ref({
   ...props.question,
   questionType: props.question.questionType || '',
   questionNumber: props.question.questionNumber || props.questionNumber,
   prompt: props.question.prompt || '',
-  correctAnswers: props.question.correctAnswers || '',
+  correctAnswers: parseCorrectAnswers(props.question.correctAnswers),
   tableData: props.question.tableData || null
 })
 
-// Multiple choice options (renamed to 'options' to match backend DTO)
 const options = ref([])
-
-// Table dimensions
 const tableRows = ref(3)
 const tableCols = ref(3)
 
-// Computed: Get all answer cells from table
 const tableAnswerCells = computed(() => {
   if (!localQuestion.value.tableData?.tableData) return []
   
@@ -346,7 +351,6 @@ const removeMultipleChoiceOption = (index) => {
     return
   }
   options.value.splice(index, 1)
-  // Update labels
   options.value.forEach((opt, i) => {
     opt.optionLabel = String.fromCharCode(65 + i)
     opt.displayOrder = i + 1
@@ -398,15 +402,12 @@ const toggleAnswerCell = (rowIndex, colIndex) => {
   const cell = localQuestion.value.tableData.tableData[rowIndex][colIndex]
   
   if (cell.isAnswer) {
-    // Remove answer marking
     cell.isAnswer = false
     cell.answerId = null
     cell.correctAnswer = ''
   } else {
-    // Mark as answer
     cell.isAnswer = true
-    cell.content = '' // Clear content when marked as answer
-    // Assign next available answerId
+    cell.content = ''
     const maxId = Math.max(0, ...tableAnswerCells.value.map(c => c.answerId || 0))
     cell.answerId = maxId + 1
     cell.correctAnswer = ''
@@ -425,36 +426,47 @@ const getQuestionTypeName = (type) => {
 }
 
 const updateQuestion = () => {
-  // Prepare data based on question type
-  const questionData = {
-    ...localQuestion.value
-  };
-  
+  const questionDataToEmit = {
+    id: localQuestion.value.id,
+    questionNumber: localQuestion.value.questionNumber,
+    questionType: localQuestion.value.questionType,
+    prompt: localQuestion.value.prompt,
+    tableData: null,
+    options: [],
+    correctAnswers: {}
+  }
+
   switch (localQuestion.value.questionType) {
     case 'multiple-choice': {
-      const correctOption = options.value.find(opt => opt.isCorrect);
-      questionData.correctAnswers = { answer: correctOption ? correctOption.optionLabel : '' };      
-      questionData.options = options.value;
-      break;
+      const correctOption = options.value.find(opt => opt.isCorrect)
+      questionDataToEmit.correctAnswers = { answer: correctOption ? correctOption.optionLabel : '' }
+      questionDataToEmit.options = options.value.map(opt => ({
+        optionLabel: opt.optionLabel,
+        optionText: opt.optionText,
+        displayOrder: opt.displayOrder
+      }))
+      break
     }
     case 'fill-blank': {
-      questionData.correctAnswers = { answer: localQuestion.value.correctAnswers || '' };
-      break;
+      questionDataToEmit.correctAnswers = { answer: localQuestion.value.correctAnswers || '' }
+      break
     }
     case 'table': {
-      const answersDict = {};
+      const answersDict = {}
       tableAnswerCells.value.forEach(cell => {
         if (cell.answerId) {
-          answersDict[cell.answerId] = cell.correctAnswer || '';
+          answersDict[String(cell.answerId)] = cell.correctAnswer || ''
         }
-      });
-      questionData.correctAnswers = answersDict;
-      questionData.tableData = localQuestion.value.tableData;
-      break;
+      })
+      questionDataToEmit.correctAnswers = answersDict
+      questionDataToEmit.tableData = localQuestion.value.tableData
+      break
     }
+    default:
+      questionDataToEmit.correctAnswers = {}
+      break
   }
-  
-  emit('update', questionData)
+  emit('update', questionDataToEmit)
 }
 
 // Watch for prop changes
@@ -463,7 +475,7 @@ watch(() => props.question, (newQuestion) => {
     ...newQuestion,
     questionType: newQuestion.questionType || '',
     prompt: newQuestion.prompt || '',
-    correctAnswers: newQuestion.correctAnswers || '',
+    correctAnswers: parseCorrectAnswers(newQuestion.correctAnswers),
     tableData: newQuestion.tableData || null
   }
   

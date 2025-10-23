@@ -7,14 +7,13 @@
           {{ viewOnly ? 'Xem chi tiết đề thi' : 'Chỉnh sửa đề thi' }}
         </h3>
         <button class="close-btn" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
+          <i class="fa-solid fa-circle-xmark"></i>
         </button>
       </div>
       
       <div class="modal-body">
         <div v-if="isLoading" class="loading-state">
           <div class="loading-spinner">
-            <i class="fa-solid fa-spinner fa-spin"></i>
             <p>Đang tải dữ liệu đề thi...</p>
           </div>
         </div>
@@ -354,8 +353,6 @@
           {{ viewOnly ? 'Đóng' : 'Hủy bỏ' }}
         </button>
         <button v-if="!viewOnly" type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving || isLoading">
-          <i v-if="isSaving" class="fa-solid fa-spinner fa-spin"></i>
-          <i v-else class="fa-solid fa-save"></i>
           {{ isSaving ? 'Đang cập nhật...' : 'Cập nhật đề thi' }}
         </button>
       </div>
