@@ -3,7 +3,7 @@
 /* Page Layout */
 .test-management-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: radial-gradient(circle at top left, #2a64d8, #ffffff);
   font-family: var(--font-family-base, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
 }
 

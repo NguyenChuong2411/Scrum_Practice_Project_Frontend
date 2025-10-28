@@ -565,6 +565,8 @@ p, h1, h2, h3, h4, h5, h6 {
   align-items: flex-start;
   gap: 2rem;
   flex-wrap: wrap;
+  font-family: 'Montserrat', var(--font-family-base);
+  font-weight: bold;
 }
 
 .journal-stat-item {
