@@ -26,6 +26,7 @@
           v-if="currentForm === 'ielts-reading'"
           :test-type="selectedTestTypeName"
           :test-type-id="selectedTestTypeId"
+          :skill-type-id="selectedSkillTypeId"
           :is-saving="isLoading"
           :is-page-mode="true"
           @save="saveTest"
@@ -36,6 +37,7 @@
           v-if="currentForm === 'ielts-listening'"
           :test-type="selectedTestTypeName"
           :test-type-id="selectedTestTypeId"
+          :skill-type-id="selectedSkillTypeId"
           :is-saving="isLoading"
           :is-page-mode="true"
           @save="saveTest"
@@ -46,6 +48,7 @@
           v-if="currentForm === 'ielts-writing'"
           :test-type="selectedTestTypeName"
           :test-type-id="selectedTestTypeId"
+          :skill-type-id="selectedSkillTypeId"
           :is-saving="isLoading"
           :is-page-mode="true"
           @save="saveTest"
@@ -70,6 +73,19 @@
         />
       </div>
     </section>
+
+    <!-- Confirmation Modal -->
+    <ConfirmationModal
+      :show="showConfirmModal"
+      type="warning"
+      title="Xác nhận quay lại"
+      message="Bạn có chắc muốn quay lại? Dữ liệu chưa lưu sẽ bị mất."
+      confirm-text="Quay lại"
+      cancel-text="Ở lại"
+      @confirm="confirmGoBack"
+      @cancel="showConfirmModal = false"
+      @close="showConfirmModal = false"
+    />
   </div>
 </template>
 
@@ -83,15 +99,20 @@ import IELTSWritingModal from './IELTS/IELTSWritingModal.vue'
 import TOEICModal from './TOEIC/TOEICModal.vue'
 import TOEICSWModal from './TOEIC/TOEICSWModal.vue'
 import { TestAdminAPI, TestDataHelpers } from '@/services/TestAdminAPI.js'
+import { useNotification } from '@/composables/useNotification'
+import ConfirmationModal from '@/components/ConfirmationModal.vue'
 
 const router = useRouter()
+const { success, error } = useNotification()
 
 // State
 const isLoading = ref(false)
 const selectedTestType = ref(null)
 const selectedTestTypeId = ref(null)
 const selectedTestTypeName = ref('')
+const selectedSkillTypeId = ref(null) // THÊM MỚI
 const currentForm = ref('')
+const showConfirmModal = ref(false)
 
 // Test types
 const testTypes = ref([
@@ -101,18 +122,32 @@ const testTypes = ref([
   { id: 4, name: 'TOEIC SW' }
 ])
 
+// TẠO MAP TƯƠNG ỨNG VỚI SQL INSERT
+const skillIdMap = {
+  'reading': 1,
+  'listening': 2,
+  'writing': 3,
+  'speaking': 4
+}
+
 // Methods
 const goBack = () => {
   if (selectedTestType.value) {
     // If already selected a form, go back to test type selection
-    if (confirm('Bạn có chắc muốn quay lại? Dữ liệu chưa lưu sẽ bị mất.')) {
-      selectedTestType.value = null
-      currentForm.value = ''
-    }
+    showConfirmModal.value = true
   } else {
     // Go back to test management page
     router.push({ name: 'test-management' })
   }
+}
+
+const confirmGoBack = () => {
+  selectedTestType.value = null
+  selectedTestTypeId.value = null
+  selectedTestTypeName.value = ''
+  selectedSkillTypeId.value = null // Reset skill type
+  currentForm.value = ''
+  showConfirmModal.value = false
 }
 
 const getPageSubtitle = () => {
@@ -138,19 +173,29 @@ const handleTestTypeSelection = (selection) => {
   selectedTestTypeId.value = selection.testType.id
   selectedTestTypeName.value = selection.testType.name
   
+  // Reset skillId
+  selectedSkillTypeId.value = null
+  
   // Determine which form to show
   if (selection.testType.name === 'IELTS Academic' || selection.testType.name === 'IELTS General') {
-    if (selection.skill && selection.skill.key === 'reading') {
-      currentForm.value = 'ielts-reading'
-    } else if (selection.skill && selection.skill.key === 'listening') {
-      currentForm.value = 'ielts-listening'
-    } else if (selection.skill && selection.skill.key === 'writing') {
-      currentForm.value = 'ielts-writing'
+    if (selection.skill) {
+      // Lấy ID từ map
+      selectedSkillTypeId.value = skillIdMap[selection.skill.key]
+      
+      if (selection.skill.key === 'reading') {
+        currentForm.value = 'ielts-reading'
+      } else if (selection.skill.key === 'listening') {
+        currentForm.value = 'ielts-listening'
+      } else if (selection.skill.key === 'writing') {
+        currentForm.value = 'ielts-writing'
+      }
     }
   } else if (selection.testType.name === 'TOEIC') {
     currentForm.value = 'toeic'
+    // TOEIC không cần skill type
   } else if (selection.testType.name === 'TOEIC SW') {
     currentForm.value = 'toeic-sw'
+    // TOEIC SW không cần skill type
   }
 }
 
@@ -160,20 +205,20 @@ const saveTest = async (testData) => {
     // Validate form data
     const validationErrors = TestDataHelpers.validateTestData(testData)
     if (validationErrors.length > 0) {
-      alert('Dữ liệu không hợp lệ:\n' + validationErrors.join('\n'))
+      error('Dữ liệu không hợp lệ:\n' + validationErrors.join('\n'), 'Lỗi dữ liệu')
       return
     }
 
     // Create new test
     const newTestId = await TestAdminAPI.createTest(testData)
     console.log('New test created with ID:', newTestId)
-    alert('Tạo đề thi mới thành công!')
+    success('Tạo đề thi mới thành công!', 'Thành công')
     
     // Navigate back to test management
     router.push({ name: 'test-management' })
-  } catch (error) {
-    console.error('Error saving test:', error)
-    alert('Lỗi khi lưu đề thi: ' + error.message)
+  } catch (err) {
+    console.error('Error saving test:', err)
+    error('Lỗi khi lưu đề thi', 'Lỗi tạo đề thi')
   } finally {
     isLoading.value = false
   }

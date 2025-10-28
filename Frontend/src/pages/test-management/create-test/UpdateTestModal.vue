@@ -12,13 +12,7 @@
       </div>
       
       <div class="modal-body">
-        <div v-if="isLoading" class="loading-state">
-          <div class="loading-spinner">
-            <p>Đang tải dữ liệu đề thi...</p>
-          </div>
-        </div>
-
-        <form v-else @submit.prevent="handleSubmit" class="test-form">
+        <form @submit.prevent="handleSubmit" class="test-form">
           <!-- Basic Information -->
           <div class="form-section">
             <h4 class="section-title">Thông tin cơ bản</h4>
@@ -113,17 +107,21 @@
               <h4 class="section-title">
                 Đoạn văn Reading
               </h4>
-              <button v-if="!viewOnly" type="button" class="btn-add" @click="addPassage">
+              <button v-if="!viewOnly && showReadingSection" type="button" class="btn-add" @click="addPassage">
                 <i class="fa-solid fa-plus"></i>
                 Thêm đoạn văn
               </button>
             </div>
 
-            <div v-if="formData.passages.length === 0" class="empty-state">
+            <div v-if="!showReadingSection" class="section-disabled">
+              <p><i class="fa-solid fa-info-circle"></i> Phần Reading không khả dụng cho loại bài thi này</p>
+            </div>
+
+            <div v-else-if="formData.passages.length === 0" class="empty-state">
               <p>Chưa có đoạn văn nào. Click "Thêm đoạn văn" để bắt đầu.</p>
             </div>
 
-            <div v-for="(passage, pIndex) in formData.passages" :key="'passage-' + pIndex" class="passage-item">
+            <div v-for="(passage, pIndex) in formData.passages" :key="'passage-' + pIndex" class="passage-item" v-show="showReadingSection">
               <div class="item-header">
                 <h5>
                   <i class="fa-solid fa-file-text"></i>
@@ -203,25 +201,28 @@
             </div>
           </div>
 
-          <!-- Listening Parts Section -->
           <div class="form-section">
             <div class="section-header">
               <h4 class="section-title">
                 <i class="fa-solid fa-headphones"></i>
                 Listening Parts
               </h4>
-              <button type="button" class="btn-add" @click="addListeningPart">
+              <button v-if="!viewOnly && showListeningSection" type="button" class="btn-add" @click="addListeningPart">
                 <i class="fa-solid fa-plus"></i>
                 Thêm Part
               </button>
             </div>
 
-            <div v-if="formData.listeningParts.length === 0" class="empty-state">
+            <div v-if="!showListeningSection" class="section-disabled">
+              <p><i class="fa-solid fa-info-circle"></i> Phần Listening không khả dụng cho loại bài thi này</p>
+            </div>
+
+            <div v-else-if="formData.listeningParts.length === 0" class="empty-state">
               <i class="fa-solid fa-headphones"></i>
               <p>Chưa có Listening Part nào. Click "Thêm Part" để bắt đầu.</p>
             </div>
 
-            <div v-for="(part, partIndex) in formData.listeningParts" :key="'part-' + partIndex" class="listening-part-item">
+            <div v-for="(part, partIndex) in formData.listeningParts" :key="'part-' + partIndex" class="listening-part-item" v-show="showListeningSection">
               <div class="item-header">
                 <h5>
                   <i class="fa-solid fa-volume-up"></i>
@@ -361,9 +362,12 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import QuestionForm from './QuestionFormNew.vue'
 import { TestDataHelpers, TestAdminAPI } from '@/services/TestAdminAPI.js'
+import { useNotification } from '@/composables/useNotification'
+
+const { error: showError } = useNotification()
 
 const props = defineProps({
   testTypes: {
@@ -390,6 +394,23 @@ const emit = defineEmits(['close', 'save'])
 const isLoading = ref(false)
 const formData = ref(TestDataHelpers.createEmptyTest())
 
+// Computed properties để xác định hiển thị phần nào
+const showReadingSection = computed(() => {
+  // Nếu không có skillTypeId (TOEIC, TOEIC SW) thì hiển thị cả 2
+  if (!formData.value.skillTypeId) return true
+  
+  // skillTypeId: 1 = Reading, 2 = Listening, 3 = Writing, 4 = Speaking
+  return formData.value.skillTypeId === 1 // Reading
+})
+
+const showListeningSection = computed(() => {
+  // Nếu không có skillTypeId (TOEIC, TOEIC SW) thì hiển thị cả 2
+  if (!formData.value.skillTypeId) return true
+  
+  // skillTypeId: 1 = Reading, 2 = Listening, 3 = Writing, 4 = Speaking
+  return formData.value.skillTypeId === 2 // Listening
+})
+
 // Load test data
 const loadTestData = async () => {
   if (!props.testId) return
@@ -400,7 +421,7 @@ const loadTestData = async () => {
     formData.value = { ...testData }
   } catch (error) {
     console.error('Error loading test data:', error)
-    alert('Không thể tải dữ liệu đề thi: ' + error.message)
+    showError('Không thể tải dữ liệu đề thi', 'Lỗi tải dữ liệu')
     emit('close')
   } finally {
     isLoading.value = false
@@ -533,28 +554,6 @@ onMounted(() => {
 <style src="../TestManagement.css" scoped></style>
 <style scoped>
 /* Component-specific styles */
-.loading-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-}
-
-.loading-spinner {
-  text-align: center;
-  color: #F6871F;
-}
-
-.loading-spinner i {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.loading-spinner p {
-  margin: 0;
-  font-weight: 500;
-}
 
 .id-badge {
   background: rgba(255, 255, 255, 0.2);
@@ -641,5 +640,25 @@ onMounted(() => {
 
 .view-only-mode .question-form {
   pointer-events: none;
+}
+
+/* Section disabled styles */
+.section-disabled {
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.section-disabled p {
+  margin: 0;
+  font-style: italic;
+}
+
+.section-disabled i {
+  margin-right: 0.5rem;
+  color: #007bff;
 }
 </style>

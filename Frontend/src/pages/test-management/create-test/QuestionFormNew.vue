@@ -235,11 +235,25 @@
         </div>
       </div>
     </div>
+
+    <!-- Confirmation Modal -->
+    <ConfirmationModal
+      :show="showConfirmModal"
+      type="warning"
+      title="Xác nhận thay đổi"
+      message="Thay đổi này sẽ xóa tất cả dữ liệu hiện tại. Bạn có chắc chắn?"
+      confirm-text="Tiếp tục"
+      cancel-text="Hủy bỏ"
+      @confirm="confirmAction"
+      @cancel="showConfirmModal = false"
+      @close="showConfirmModal = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue'
+import ConfirmationModal from '@/components/ConfirmationModal.vue'
 
 const props = defineProps({
   question: {
@@ -280,6 +294,8 @@ const localQuestion = ref({
 const options = ref([])
 const tableRows = ref(3)
 const tableCols = ref(3)
+const showConfirmModal = ref(false)
+const confirmAction = ref(null)
 
 const tableAnswerCells = computed(() => {
   if (!localQuestion.value.tableData?.tableData) return []
@@ -315,14 +331,16 @@ const selectQuestionType = (type) => {
 }
 
 const changeQuestionType = () => {
-  if (confirm('Đổi loại câu hỏi sẽ xóa tất cả dữ liệu hiện tại. Bạn có chắc chắn?')) {
+  confirmAction.value = () => {
     localQuestion.value.questionType = ''
     localQuestion.value.prompt = ''
     localQuestion.value.correctAnswers = ''
     localQuestion.value.tableData = null
     options.value = []
     updateQuestion()
+    showConfirmModal.value = false
   }
+  showConfirmModal.value = true
 }
 
 const initializeMultipleChoice = () => {
@@ -347,6 +365,7 @@ const addMultipleChoiceOption = () => {
 
 const removeMultipleChoiceOption = (index) => {
   if (options.value.length <= 2) {
+    // Có thể thay thế bằng notification toast nếu muốn
     alert('Phải có ít nhất 2 lựa chọn!')
     return
   }
@@ -392,10 +411,12 @@ const initializeTable = () => {
 }
 
 const regenerateTable = () => {
-  if (confirm('Thay đổi kích thước sẽ xóa toàn bộ dữ liệu bảng hiện tại. Tiếp tục?')) {
+  confirmAction.value = () => {
     initializeTable()
     updateQuestion()
+    showConfirmModal.value = false
   }
+  showConfirmModal.value = true
 }
 
 const toggleAnswerCell = (rowIndex, colIndex) => {

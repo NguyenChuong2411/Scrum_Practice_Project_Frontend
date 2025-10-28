@@ -117,9 +117,10 @@ import SearchBar from '../../components/SearchBar.vue'
 import Pagination from '../../components/Pagination.vue'
 import TestDetailModal from './online-test_modal/TestDetailModal.vue'
 import { ref, computed, onMounted } from 'vue'
-import { fetchAllTests, fetchTestDetails } from './OnlineTestPageAPI.js'
+import { fetchAllTests, fetchReadingTestDetails, fetchListeningTestDetails } from './OnlineTestPageAPI.js'
 import { useRouter } from 'vue-router'
 import { authAPI } from '@/services/AuthAPI.js'
+import { useNotification } from '@/composables/useNotification'
 
 // Search functionality
 const searchTabs = [
@@ -148,6 +149,7 @@ const error = ref(null) // <-- Thêm trạng thái lỗi
 // User info
 const router = useRouter()
 const userInfo = ref(null)
+const { error: showError } = useNotification()
 
 // Computed properties
 const filteredTests = computed(() => {
@@ -216,15 +218,30 @@ const getBadgeClass = (type) => {
 }
 
 // Modal methods
-const openTestDetail = async (test) => {
+const openTestDetail = async (testItem) => {
   try {
-    // Fetch chi tiết test với passages data
-    const detailedTest = await fetchTestDetails(test.id)
-    selectedTest.value = detailedTest
-    showDetailModal.value = true
+    let fullDetails;
+    
+    // Dựa vào skillTypeId để gọi đúng API
+    if (testItem.skillTypeId === 1) { // 1 = Reading
+      fullDetails = await fetchReadingTestDetails(testItem.id);
+    } else if (testItem.skillTypeId === 2) { // 2 = Listening
+      fullDetails = await fetchListeningTestDetails(testItem.id);
+    } else {
+      // Mặc định cho TOEIC hoặc các loại khác (giả sử Reading)
+      fullDetails = await fetchReadingTestDetails(testItem.id);
+    }
+
+    // Gộp thông tin từ list và thông tin chi tiết
+    selectedTest.value = { ...testItem, ...fullDetails };
+    showDetailModal.value = true;
+    
   } catch (error) {
-    selectedTest.value = test
-    showDetailModal.value = true
+    console.error("Không thể tải chi tiết bài thi:", error);
+    showError('Không thể tải chi tiết bài thi', 'Lỗi tải dữ liệu');
+    // Fallback: dùng dữ liệu cơ bản từ list
+    selectedTest.value = testItem;
+    showDetailModal.value = true;
   }
 }
 

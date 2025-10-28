@@ -271,6 +271,10 @@ const props = defineProps({
     type: Number,
     required: true
   },
+  skillTypeId: {
+    type: Number,
+    default: null
+  },
   isSaving: {
     type: Boolean,
     default: false
@@ -289,6 +293,7 @@ const formData = ref({
   description: '',
   durationMinutes: 40,
   testTypeId: props.testTypeId,
+  skillTypeId: props.skillTypeId, // Gán prop vào formData
   audioFileId: null,
   passages: [],
   listeningParts: []
