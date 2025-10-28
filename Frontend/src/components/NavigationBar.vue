@@ -63,7 +63,7 @@
         </div>
         
 
-        <div class="dropdown-menu" :class="{ 'show': isAccountDropdownOpen }">
+        <div class="nav-dropdown-menu" :class="{ 'show': isAccountDropdownOpen }">
           <div v-if="isLoggedIn" class="dropdown-content">
             <div class="dropdown-header">
               <div class="user-avatar">

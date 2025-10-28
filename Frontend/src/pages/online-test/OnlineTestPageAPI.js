@@ -48,13 +48,13 @@ export const fetchAllTests = async () => {
   }
 };
 
-// Hàm để lấy chi tiết một bài thi theo ID
-export const fetchTestDetails = async (testId) => {
+// Hàm để lấy chi tiết một bài thi theo ID (Reading)
+export const fetchReadingTestDetails = async (testId) => {
   try {
     const response = await apiClient.get(`/OnlineTest/GetTestDetails/${testId}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching details for test ${testId}:`, error);
+    console.error(`Error fetching reading test details for test ${testId}:`, error);
     throw error;
   }
 };
@@ -68,6 +68,11 @@ export const fetchListeningTestDetails = async (testId) => {
     console.error(`Error fetching listening test details for test ${testId}:`, error);
     throw error;
   }
+};
+
+// Hàm để lấy chi tiết một bài thi theo ID (deprecated - dùng fetchReadingTestDetails thay thế)
+export const fetchTestDetails = async (testId) => {
+  return await fetchReadingTestDetails(testId);
 };
 
 // Hàm để nộp bài thi

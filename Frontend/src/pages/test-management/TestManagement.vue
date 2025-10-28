@@ -143,25 +143,20 @@
     />
 
     <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal" class="modal-overlay" @click="showDeleteModal = false">
-      <div class="modal-content small" @click.stop>
-        <div class="modal-header">
-          <h3>Xác nhận xóa</h3>
-        </div>
-        <div class="modal-body">
-          <p>Bạn có chắc chắn muốn xóa đề thi "<strong>{{ testToDelete?.title }}</strong>"?</p>
-          <p class="warning">Hành động này không thể hoàn tác!</p>
-        </div>
-        <div class="modal-delete">
-          <button class="btn secondary" @click="showDeleteModal = false">
-            Hủy bỏ
-          </button>
-          <button class="btn danger" @click="deleteTest" :disabled="isLoading">
-            {{ isLoading ? 'Đang xóa...' : 'Xóa đề thi' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmationModal
+      :show="showDeleteModal"
+      type="danger"
+      title="Xác nhận xóa"
+      :message="`Bạn có chắc chắn muốn xóa đề thi '${testToDelete?.title}'?`"
+      sub-message="Hành động này không thể hoàn tác!"
+      confirm-text="Xóa đề thi"
+      cancel-text="Hủy bỏ"
+      :loading="isLoading"
+      loading-text="Đang xóa..."
+      @confirm="deleteTest"
+      @cancel="showDeleteModal = false"
+      @close="showDeleteModal = false"
+    />
   </div>
 </template>
 
@@ -170,9 +165,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Pagination from '@/components/Pagination.vue'
 import UpdateTestModal from './create-test/UpdateTestModal.vue'
+import ConfirmationModal from '@/components/ConfirmationModal.vue'
 import { TestAdminAPI, TestDataHelpers } from '@/services/TestAdminAPI.js'
+import { useNotification } from '@/composables/useNotification'
 
 const router = useRouter()
+const { success, error } = useNotification()
 
 // Reactive data
 const searchQuery = ref('')
@@ -256,9 +254,9 @@ const loadAllTests = async () => {
   try {
     const tests = await TestAdminAPI.getAllTestsForAdmin()
     allTests.value = tests
-  } catch (error) {
-    console.error('Error loading tests:', error)
-    alert('Không thể tải danh sách đề thi: ' + error.message)
+  } catch (err) {
+    console.error('Error loading tests:', err)
+    error('Không thể tải danh sách đề thi', 'Lỗi tải dữ liệu')
   } finally {
     isLoading.value = false
   }
@@ -297,10 +295,10 @@ const deleteTest = async () => {
       showDeleteModal.value = false
       testToDelete.value = null
       console.log('Test deleted successfully')
-      alert('Xóa đề thi thành công!')
-    } catch (error) {
-      console.error('Error deleting test:', error)
-      alert('Không thể xóa đề thi: ' + error.message)
+      success('Xóa đề thi thành công!', 'Thành công')
+    } catch (err) {
+      console.error('Error deleting test:', err)
+      error('Không thể xóa đề thi', 'Lỗi xóa dữ liệu')
     } finally {
       isLoading.value = false
     }
@@ -313,7 +311,7 @@ const saveTest = async (testData) => {
     // Validate form data
     const validationErrors = TestDataHelpers.validateTestData(testData)
     if (validationErrors.length > 0) {
-      alert('Dữ liệu không hợp lệ:\n' + validationErrors.join('\n'))
+      error('Dữ liệu không hợp lệ:\n' + validationErrors.join('\n'), 'Lỗi dữ liệu')
       return
     }
 
@@ -323,15 +321,15 @@ const saveTest = async (testData) => {
       // Update existing test
       await TestAdminAPI.updateTest(testData.id, testData)
       console.log('Test updated successfully')
-      alert('Cập nhật đề thi thành công!')
+      success('Cập nhật đề thi thành công!', 'Thành công')
       
       // Reload the test list
       await loadAllTests()
       closeModal()
     }
-  } catch (error) {
-    console.error('Error saving test:', error)
-    alert('Lỗi khi lưu đề thi: ' + error.message)
+  } catch (err) {
+    console.error('Error saving test:', err)
+    error('Lỗi khi lưu đề thi', 'Lỗi lưu dữ liệu')
   } finally {
     isLoading.value = false
   }
