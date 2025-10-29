@@ -41,22 +41,14 @@
             </div>
 
             <div class="form-row">
-              <div class="form-group">
-                <label>File âm thanh (ID)</label>
-                <input 
-                  type="number" 
-                  v-model="formData.audioFileId" 
-                  placeholder="ID file âm thanh chính"
-                  class="form-input"
-                />
-              </div>
-              <div class="form-group">
-                <label>Tải file âm thanh</label>
+              <div class="form-group full-width">
+                <label>Chọn file âm thanh *</label>
                 <input 
                   type="file" 
                   accept="audio/*"
                   @change="handleAudioUpload"
                   class="form-input"
+                  ref="audioFileInput"
                 />
               </div>
             </div>
@@ -73,27 +65,27 @@
           </div>
 
           <!-- Audio Preview -->
-          <div v-if="audioFile || formData.audioFileId" class="form-section">
+          <div v-if="audioFile" class="form-section">
             <h4 class="section-title">
-              <i class="fa-solid fa-volume-up"></i>
-              File âm thanh
+              File âm thanh đã chọn
             </h4>
             
             <div class="audio-preview">
-              <audio v-if="audioFile" controls class="audio-player">
+              <!-- Audio Player Preview -->
+              <audio v-if="audioPreviewUrl" controls class="audio-player">
                 <source :src="audioPreviewUrl" type="audio/mpeg">
                 Trình duyệt không hỗ trợ phát âm thanh.
               </audio>
               
-              <div v-else-if="formData.audioFileId" class="audio-info">
+              <div class="audio-info">
                 <i class="fa-solid fa-file-audio"></i>
-                <span>File âm thanh ID: {{ formData.audioFileId }}</span>
+                <span>{{ selectedFileName }}</span>
+                <small class="file-note">File sẽ được tải lên khi tạo đề thi thành công</small>
               </div>
               
               <div class="audio-actions">
                 <button type="button" class="btn secondary small" @click="clearAudio">
-                  <i class="fa-solid fa-trash"></i>
-                  Xóa file
+                  Xóa file đã chọn
                 </button>
               </div>
             </div>
@@ -103,7 +95,6 @@
           <div class="form-section">
             <div class="section-header">
               <h4 class="section-title">
-                <i class="fa-solid fa-list-ol"></i>
                 Listening Parts ({{ formData.listeningParts.length }})
               </h4>
               <button type="button" class="btn-add" @click="addListeningPart">
@@ -119,12 +110,11 @@
             <div v-for="(part, partIndex) in formData.listeningParts" :key="'part-' + partIndex" class="listening-part-item">
               <div class="item-header">
                 <h5>
-                  <i class="fa-solid fa-volume-up"></i>
                   Part {{ partIndex + 1 }}
                   <span class="part-info">({{ getTotalQuestionsInPart(part) }} câu hỏi)</span>
                 </h5>
                 <button type="button" class="btn-remove" @click="removeListeningPart(partIndex)">
-                  <i class="fa-solid fa-trash"></i>
+                  <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
 
@@ -153,7 +143,6 @@
               <div class="question-groups-subsection">
                 <div class="subsection-header">
                   <h6>
-                    <i class="fa-solid fa-layer-group"></i>
                     Nhóm câu hỏi ({{ part.questionGroups.length }})
                   </h6>
                   <button type="button" class="btn-add small" @click="addQuestionGroup(partIndex)">
@@ -163,7 +152,6 @@
                 </div>
 
                 <div v-if="part.questionGroups.length === 0" class="empty-state small">
-                  <i class="fa-solid fa-layer-group"></i>
                   <p>Chưa có nhóm câu hỏi nào</p>
                 </div>
 
@@ -244,13 +232,11 @@
 
       <div class="modal-footer">
         <button type="button" class="btn secondary" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
           Hủy bỏ
         </button>
-        <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving">
-          <i v-if="isSaving" class="fa-solid fa-spinner fa-spin"></i>
-          <i v-else class="fa-solid fa-save"></i>
-          {{ isSaving ? 'Đang tạo...' : 'Tạo đề thi Listening' }}
+        <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving || isUploading || !audioFile">
+          <i v-if="isSaving || isUploading" class="fa-solid fa-spinner fa-spin"></i>
+          {{ isSaving ? 'Đang lưu...' : (isUploading ? 'Đang tải file âm thanh...' : 'Tạo đề thi Listening') }}
         </button>
       </div>
     </div>
@@ -258,9 +244,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import QuestionForm from '../QuestionFormNew.vue'
-import { TestDataHelpers } from '@/services/TestAdminAPI.js'
+import { TestDataHelpers, TestAdminAPI } from '@/services/TestAdminAPI.js'
 
 const props = defineProps({
   testType: {
@@ -294,33 +280,48 @@ const formData = ref({
   durationMinutes: 40,
   testTypeId: props.testTypeId,
   skillTypeId: props.skillTypeId, // Gán prop vào formData
-  audioFileId: null,
+  audioFileId: null, // Initialize as null
   passages: [],
   listeningParts: []
 })
 
-// Audio handling
-const audioFile = ref(null)
-const audioPreviewUrl = ref('')
+// Audio handling state
+const audioFile = ref(null) // Keep track of the selected File object
+const audioFileInput = ref(null) // Ref for the file input element
+const isUploading = ref(false)
+const selectedFileName = ref('') // Store selected file name for display
+const audioPreviewUrl = ref('') // For audio preview
 
 const handleAudioUpload = (event) => {
   const file = event.target.files[0]
-  if (file) {
-    audioFile.value = file
-    audioPreviewUrl.value = URL.createObjectURL(file)
-    // TODO: Upload file to server and get ID
-    console.log('Audio file selected:', file.name)
+  if (!file) {
+    clearAudio() // Clear if user cancels file selection
+    return
   }
+
+  // Store file temporarily for later upload
+  audioFile.value = file
+  selectedFileName.value = file.name
+  // Create preview URL for audio player
+  audioPreviewUrl.value = URL.createObjectURL(file)
+  console.log('Audio file selected:', file.name)
 }
 
 const clearAudio = () => {
   audioFile.value = null
-  audioPreviewUrl.value = ''
+  selectedFileName.value = ''
   formData.value.audioFileId = null
   
-  // Clear the file input
-  const fileInput = document.querySelector('input[type="file"]')
-  if (fileInput) fileInput.value = ''
+  // Clean up preview URL to avoid memory leaks
+  if (audioPreviewUrl.value) {
+    URL.revokeObjectURL(audioPreviewUrl.value)
+    audioPreviewUrl.value = ''
+  }
+  
+  // Clear the file input visually
+  if (audioFileInput.value) {
+    audioFileInput.value.value = ''
+  }
 }
 
 // Listening part management
@@ -381,10 +382,16 @@ const getTotalQuestionsInPart = (part) => {
   return part.questionGroups.reduce((total, group) => total + group.questions.length, 0)
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   // Basic validation
   if (!formData.value.title.trim()) {
     alert('Vui lòng nhập tên đề thi')
+    return
+  }
+
+  // Check if audio file is selected
+  if (!audioFile.value) {
+    alert('Vui lòng chọn file âm thanh cho đề thi Listening.')
     return
   }
 
@@ -410,15 +417,35 @@ const handleSubmit = () => {
     }
   }
 
-  // TODO: Handle audio file upload if needed
-  if (audioFile.value) {
-    console.log('Need to upload audio file:', audioFile.value.name)
-    // Simulate upload - in real implementation, upload file first and get ID
-    // formData.value.audioFileId = uploadedFileId
+  // Upload audio file first, then create test if successful
+  try {
+    isUploading.value = true
+    
+    // Upload audio file and get ID
+    const uploadResult = await TestAdminAPI.uploadAudioFile(audioFile.value)
+    if (uploadResult && uploadResult.audioFileId) {
+      formData.value.audioFileId = uploadResult.audioFileId
+      console.log('Audio uploaded successfully, ID:', uploadResult.audioFileId)
+      
+      // Now emit save with the audioFileId
+      emit('save', { ...formData.value })
+    } else {
+      throw new Error('API did not return a valid audioFileId.')
+    }
+  } catch (error) {
+    console.error('Audio upload failed:', error)
+    alert(`Lỗi tải file âm thanh: ${error.message || 'Không thể tải file lên.'}`)
+    isUploading.value = false
+    return
   }
-
-  emit('save', formData.value)
 }
+
+// Cleanup on component unmount
+onUnmounted(() => {
+  if (audioPreviewUrl.value) {
+    URL.revokeObjectURL(audioPreviewUrl.value)
+  }
+})
 </script>
 
 <style src="@/assets/modal.css"></style>
@@ -513,6 +540,35 @@ const handleSubmit = () => {
 .bottom-add-button .btn-add {
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1; /* Make element span all columns */
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.success-text {
+  color: #16a34a;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.audio-player {
+  width: 100%;
+  height: 40px;
+  margin-bottom: 1rem;
+}
+
+.file-note {
+  display: block;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 0.25rem;
 }
 
 /* Responsive */

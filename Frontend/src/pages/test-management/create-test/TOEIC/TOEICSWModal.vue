@@ -3,7 +3,6 @@
     <div class="modal-content" @click.stop>
       <div class="modal-header purple">
         <h3>
-          <i class="fa-solid fa-microphone"></i>
           Tạo đề thi TOEIC Speaking & Writing
         </h3>
         <button v-if="!isPageMode" class="close-btn" @click="$emit('close')">
@@ -378,12 +377,9 @@ Question 8: Write an opinion essay
 
       <div class="modal-footer">
         <button type="button" class="btn secondary" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
           Hủy bỏ
         </button>
         <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving">
-          <i v-if="isSaving" class="fa-solid fa-spinner fa-spin"></i>
-          <i v-else class="fa-solid fa-save"></i>
           {{ isSaving ? 'Đang tạo...' : 'Tạo đề thi TOEIC SW' }}
         </button>
       </div>
