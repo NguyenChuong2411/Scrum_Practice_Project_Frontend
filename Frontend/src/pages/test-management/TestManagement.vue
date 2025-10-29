@@ -305,7 +305,11 @@ const deleteTest = async () => {
   }
 }
 
-const saveTest = async (testData) => {
+const saveTest = async (savePayload) => {
+  // Phân tách payload từ modal edit
+  const testData = savePayload.testData || savePayload // Handle both create and edit emits
+  const oldAudioIdToDelete = savePayload.oldAudioId || null
+
   isLoading.value = true
   try {
     // Validate form data
@@ -320,6 +324,13 @@ const saveTest = async (testData) => {
     if (showEditModal.value) {
       // Update existing test
       await TestAdminAPI.updateTest(testData.id, testData)
+
+      // SAU KHI UPDATE THÀNH CÔNG, XÓA FILE CŨ NẾU CÓ
+      if (oldAudioIdToDelete) {
+        console.log(`Update successful, now deleting old audio ID: ${oldAudioIdToDelete}`)
+        await TestAdminAPI.deleteAudioFile(oldAudioIdToDelete)
+      }
+
       console.log('Test updated successfully')
       success('Cập nhật đề thi thành công!', 'Thành công')
       

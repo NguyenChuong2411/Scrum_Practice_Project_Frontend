@@ -118,6 +118,35 @@ export const TestAdminAPI = {
       }
       throw new Error('Không thể xóa đề thi: ' + error.message)
     }
+  },
+
+  // Upload file âm thanh
+  async uploadAudioFile(audioFile) {
+    const formData = new FormData();
+    formData.append('audioFile', audioFile);
+
+    try {
+      const response = await apiClient.post('/UploadAudio', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading audio file:', error);
+      throw error;
+    }
+  },
+
+  // Xóa file âm thanh theo ID
+  async deleteAudioFile(audioFileId) {
+    if (!audioFileId) return;
+    try {
+      await apiClient.delete(`/DeleteAudio/${audioFileId}`);
+      console.log(`Successfully requested deletion for audio file ID: ${audioFileId}`);
+    } catch (error) {
+      console.error(`Error deleting audio file ID ${audioFileId}:`, error);
+    }
   }
 }
 

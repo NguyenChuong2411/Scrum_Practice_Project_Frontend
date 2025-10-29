@@ -75,7 +75,6 @@
           <!-- Audio Preview -->
           <div v-if="audioFile || formData.audioFileId" class="form-section">
             <h4 class="section-title">
-              <i class="fa-solid fa-volume-up"></i>
               File âm thanh Listening
             </h4>
             
@@ -138,12 +137,11 @@
             <div v-for="(part, partIndex) in formData.listeningParts" :key="'listening-part-' + partIndex" class="listening-part-item">
               <div class="item-header">
                 <h5>
-                  <i class="fa-solid fa-volume-up"></i>
                   Listening Part {{ partIndex + 1 }}
                   <span class="part-info">({{ getTotalQuestionsInPart(part) }} câu hỏi)</span>
                 </h5>
                 <button type="button" class="btn-remove" @click="removeListeningPart(partIndex)">
-                  <i class="fa-solid fa-trash"></i>
+                  <i class="fa-solid fa-trash-can"></i>
                 </button>
               </div>
 
@@ -172,7 +170,6 @@
               <div class="question-groups-subsection">
                 <div class="subsection-header">
                   <h6>
-                    <i class="fa-solid fa-layer-group"></i>
                     Nhóm câu hỏi ({{ part.questionGroups.length }})
                   </h6>
                   <button type="button" class="btn-add small" @click="addQuestionGroup(partIndex, 'listening')">
@@ -189,7 +186,7 @@
                       <span class="group-info">({{ group.questions.length }} câu hỏi)</span>
                     </h6>
                     <button type="button" class="btn-remove small" @click="removeQuestionGroup(partIndex, groupIndex, 'listening')">
-                      <i class="fa-solid fa-trash"></i>
+                      <i class="fa-solid fa-trash-can"></i>
                     </button>
                   </div>
 
@@ -337,12 +334,9 @@
 
       <div class="modal-footer">
         <button type="button" class="btn secondary" @click="$emit('close')">
-          <i class="fa-solid fa-times"></i>
           Hủy bỏ
         </button>
         <button type="button" class="btn primary" @click="handleSubmit" :disabled="isSaving">
-          <i v-if="isSaving" class="fa-solid fa-spinner fa-spin"></i>
-          <i v-else class="fa-solid fa-save"></i>
           {{ isSaving ? 'Đang tạo...' : 'Tạo đề thi TOEIC' }}
         </button>
       </div>

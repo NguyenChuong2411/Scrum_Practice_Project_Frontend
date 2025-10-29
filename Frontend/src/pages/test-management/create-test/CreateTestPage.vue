@@ -199,7 +199,11 @@ const handleTestTypeSelection = (selection) => {
   }
 }
 
-const saveTest = async (testData) => {
+const saveTest = async (savePayload) => {
+  // Phân tách payload - handle both direct testData and object with testData
+  const testData = savePayload.testData || savePayload // Handle both create and edit emits
+  // For create operations, we don't need to handle oldAudioId since it's a new test
+
   isLoading.value = true
   try {
     // Validate form data

@@ -3,7 +3,7 @@
     <div class="question-header">
       <h6>
         Câu hỏi {{ questionNumber }}
-        <span v-if="showId && question.id" class="id-badge">ID: {{ question.id }}</span>
+        <!-- <span v-if="showId && question.id" class="id-badge">ID: {{ question.id }}</span> -->
       </h6>
       <button type="button" class="btn-remove small" @click="$emit('remove')">
         <i class="fa-solid fa-trash-can"></i>
