@@ -10,7 +10,7 @@
     <!-- Navigation Menu -->
     <div class="nav-menu">
       <ul class="nav-list">
-        <li class="nav-item">
+        <!-- <li class="nav-item">
           <router-link to="/" class="nav-link" :class="{ active: isActiveRoute('/') }">
             Trang chủ
           </router-link>
@@ -19,13 +19,13 @@
           <router-link to="/about" class="nav-link" :class="{ active: isActiveRoute('/about') }">
             Về Enly
           </router-link>
-        </li>
+        </li> -->
         <li class="nav-item">
           <router-link to="/online-test" class="nav-link" :class="{ active: isActiveRoute('/online-test') }">
             Luyện thi Online
           </router-link>
         </li>
-        <li class="nav-item">
+        <!-- <li class="nav-item">
           <router-link to="/test-management" class="nav-link" :class="{ active: isActiveRoute('/test-management') }">
             Quản lý đề thi
           </router-link>
@@ -34,13 +34,13 @@
           <router-link to="/news" class="nav-link" :class="{ active: isActiveRoute('/news') }">
             Tin tức
           </router-link>
-        </li>
+        </li> -->
         <!-- <li class="nav-item">
           <router-link to="/sharing" class="nav-link" :class="{ active: isActiveRoute('/sharing') }">
             Góc chia sẻ
           </router-link>
         </li> -->
-        <li class="nav-item">
+        <!-- <li class="nav-item">
           <router-link to="/flashcard" class="nav-link" :class="{ active: isActiveRoute('/flashcard') }">
             Học Flashcard
           </router-link>
@@ -49,7 +49,7 @@
           <router-link to="/contact" class="nav-link" :class="{ active: isActiveRoute('/contact') }">
             Liên hệ
           </router-link>
-        </li>
+        </li> -->
       </ul>
     </div>
 
@@ -74,7 +74,7 @@
                 <span class="user-email">{{ userEmail }}</span>
               </div>
             </div>
-            <hr class="dropdown-divider">
+            <!-- <hr class="dropdown-divider">
             <a href="#" class="dropdown-item" @click="goToProfile">
               <i class="fa-solid fa-user"></i>
               <span>Thông tin cá nhân</span>
@@ -83,7 +83,7 @@
               <i class="fa-solid fa-address-book"></i>
               <span>Lịch sử làm bài</span>
             </a>
-            <hr class="dropdown-divider">
+            <hr class="dropdown-divider"> -->
             <a href="#" class="dropdown-item logout" @click="handleLogout">
               <span>Đăng xuất</span>
             </a>
