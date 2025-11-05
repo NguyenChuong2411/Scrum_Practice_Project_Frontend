@@ -116,6 +116,29 @@ export const authAPI = {
   getUserInfo: () => {
     const userInfo = localStorage.getItem('userInfo')
     return userInfo ? JSON.parse(userInfo) : null
+  },
+
+  // Lấy thông tin user profile từ server
+  getUserProfile: async () => {
+    try {
+      const response = await apiClient.get('/User/GetUserProfile')
+      
+      // Cập nhật thông tin user vào localStorage
+      const userInfo = {
+        id: response.data.id,
+        fullName: response.data.fullName,
+        email: response.data.email
+      }
+      localStorage.setItem('userInfo', JSON.stringify(userInfo))
+      
+      return { success: true, data: response.data }
+    } catch (error) {
+      console.error('Get user profile error:', error)
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Không thể lấy thông tin người dùng'
+      }
+    }
   }
 }
 

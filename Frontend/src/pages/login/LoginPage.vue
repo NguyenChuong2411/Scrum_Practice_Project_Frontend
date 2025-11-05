@@ -1,5 +1,8 @@
 <template>
   <div class="login-page">
+    <!-- Notification Container -->
+    <NotificationContainer />
+    
     <div class="login-container">
       <!-- Login Form -->
       <div class="login-form-container">
@@ -134,7 +137,6 @@
                 {{ isRegisterMode ? 'Đăng ký' : 'Đăng nhập' }}
               </span>
               <span v-else class="loading-text">
-                <i class="fa-solid fa-spinner fa-spin"></i>
                 {{ isRegisterMode ? 'Đang đăng ký...' : 'Đang đăng nhập...' }}
               </span>
             </button>
@@ -154,7 +156,7 @@
             </div>
 
             <!-- Social Login -->
-            <div class="social-login">
+            <!-- <div class="social-login">
               <div class="divider">
                 <span>hoặc</span>
               </div>
@@ -168,7 +170,7 @@
                   <span>{{ isRegisterMode ? 'Đăng ký' : 'Đăng nhập' }} với Facebook</span>
                 </button>
               </div>
-            </div>
+            </div> -->
           </form>
         </div>
       </div>
@@ -180,9 +182,12 @@
 import { ref, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authAPI } from '@/services/AuthAPI.js'
+import { useNotification } from '@/composables/useNotification'
+import NotificationContainer from '@/components/NotificationContainer.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { success, error, warning } = useNotification()
 
 // Form state
 const isRegisterMode = ref(route.query.mode === 'register')
@@ -301,7 +306,7 @@ const handleSubmit = async () => {
       const result = await authAPI.register(registerData)
       
       if (result.success) {
-        alert('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.')
+        success('Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.', 'Đăng ký thành công')
         // Chuyển sang chế độ đăng nhập
         router.push('/login')
         // Clear form data
@@ -312,8 +317,9 @@ const handleSubmit = async () => {
         // Hiển thị lỗi từ server
         if (result.error.includes('email')) {
           errors.email = 'Email này đã được sử dụng'
+          error('Email này đã được sử dụng. Vui lòng sử dụng email khác.', 'Đăng ký thất bại')
         } else {
-          alert(`Đăng ký thất bại: ${result.error}`)
+          error(result.error, 'Đăng ký thất bại')
         }
       }
     } else {
@@ -327,7 +333,15 @@ const handleSubmit = async () => {
       const result = await authAPI.login(loginData)
       
       if (result.success) {
-        alert('Đăng nhập thành công!')
+        // Lấy thông tin user profile mới nhất từ server
+        try {
+          await authAPI.getUserProfile()
+        } catch (profileError) {
+          console.error('Failed to fetch user profile after login:', profileError)
+          // Không block login flow nếu lỗi lấy profile
+        }
+        
+        success('Chào mừng bạn quay trở lại!', 'Đăng nhập thành công')
         // Emit event để NavigationBar cập nhật trạng thái
         window.dispatchEvent(new Event('auth-state-changed'))
         // Redirect to home page or previous page
@@ -338,14 +352,15 @@ const handleSubmit = async () => {
         if (result.error.includes('email') || result.error.includes('password') || result.error.includes('không chính xác')) {
           errors.email = 'Email hoặc mật khẩu không chính xác'
           errors.password = 'Email hoặc mật khẩu không chính xác'
+          error('Vui lòng kiểm tra lại thông tin đăng nhập.', 'Email hoặc mật khẩu không chính xác')
         } else {
-          alert(`Đăng nhập thất bại: ${result.error}`)
+          error(result.error, 'Đăng nhập thất bại')
         }
       }
     }
-  } catch (error) {
-    console.error('Auth error:', error)
-    alert('Có lỗi xảy ra. Vui lòng kiểm tra kết nối internet và thử lại!')
+  } catch (err) {
+    console.error('Auth error:', err)
+    error('Có lỗi xảy ra. Vui lòng kiểm tra kết nối internet và thử lại!', 'Lỗi kết nối')
   } finally {
     isLoading.value = false
   }
