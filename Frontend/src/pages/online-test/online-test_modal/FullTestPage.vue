@@ -153,7 +153,7 @@
                     <table class="answer-table">
                       <tr v-for="(row, rowIndex) in question.tableData.tableData" :key="rowIndex">
                         <td v-for="(cell, colIndex) in row" :key="colIndex" class="table-cell">
-                          <span v-if="!cell.isAnswer">{{ cell.text }}</span>
+                          <span v-if="!cell.isAnswer">{{ cell.content }}</span>
                           <strong v-else class="answer-placeholder">
                             {{ cell.answerId }} ________
                           </strong>
