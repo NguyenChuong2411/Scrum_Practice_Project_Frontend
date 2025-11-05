@@ -156,7 +156,7 @@
             </div>
 
             <!-- Social Login -->
-            <div class="social-login">
+            <!-- <div class="social-login">
               <div class="divider">
                 <span>hoặc</span>
               </div>
@@ -170,7 +170,7 @@
                   <span>{{ isRegisterMode ? 'Đăng ký' : 'Đăng nhập' }} với Facebook</span>
                 </button>
               </div>
-            </div>
+            </div> -->
           </form>
         </div>
       </div>
